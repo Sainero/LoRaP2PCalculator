@@ -1,5 +1,6 @@
 import { Clock, X, ArrowRight, Timer, Trash2, Activity, CheckCircle2, AlertTriangle, Radio, Cpu, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Undo2, Redo2 } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { NumberInput } from '@/components/ui/NumberInput';
 import { DeviceProfile, LoRaParams } from '@/types';
 import { calculateToA } from '@/utils/lora';
 import { motion } from 'motion/react';
@@ -378,14 +379,13 @@ export function CyclogramVisualizer({ devices, initialSequence, initialDcMode, o
                 <Radio className="w-3.5 h-3.5" /> Окно RX
               </button>
               <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg overflow-hidden h-8">
-                <input
-                  type="number"
+                <NumberInput
                   value={customWaitSec}
-                  onChange={(e) => setCustomWaitSec(Number(e.target.value))}
-                  className="w-16 h-full px-2 text-xs border-none bg-transparent focus:ring-0 focus:outline-none"
+                  onChange={(v) => setCustomWaitSec(v)}
                   min={0.1}
                   step={0.1}
                   title="Задержка в секундах"
+                  className="w-24 h-full px-2 text-xs border-2 border-transparent bg-transparent focus:border-transparent focus:ring-0 focus:outline-none"
                 />
                 <span className="text-xs text-slate-500 pr-1 select-none">с</span>
                 <button onClick={() => addWait(customWaitSec * 1000, 'Свободная пауза')} className="flex items-center gap-1.5 px-3 h-full bg-slate-100 text-slate-700 hover:bg-slate-200 border-l border-slate-200 text-xs font-medium transition-colors">
@@ -405,7 +405,7 @@ export function CyclogramVisualizer({ devices, initialSequence, initialDcMode, o
                 <CustomSelect value={active.id} onChange={setActiveId} options={devices.map((d) => ({ value: d.id, label: d.name }))} className="w-36" />
                 <ArrowRight className="w-4 h-4 text-indigo-400" />
                 <CustomSelect value={responder.id} onChange={setResponderId} options={devices.map((d) => ({ value: d.id, label: d.name }))} className="w-36" />
-                <button onClick={addDialog} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg text-xs font-medium transition-colors">
+                <button onClick={addDialog} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white hover:brightness-90 rounded-lg text-xs font-medium transition-all">
                   <ArrowRight className="w-3.5 h-3.5" /> Запрос → Ответ
                 </button>
               </div>
@@ -553,22 +553,22 @@ export function CyclogramVisualizer({ devices, initialSequence, initialDcMode, o
                       );
                     }
                     return (
-                      <div key={item.id} onClick={(e) => handleBlockClick(e, idx)} className={cn('group relative flex flex-col justify-center items-center pattern-diagonal-lines text-slate-700 bg-slate-100 border border-slate-300 rounded-md mx-0.5 cursor-pointer transition-all', sel && 'ring-2 ring-blue-400 ring-offset-1')} style={{ width: w, minWidth: w }}>
+                      <div key={item.id} onClick={(e) => handleBlockClick(e, idx)} className={cn('group relative flex flex-col justify-center items-center pattern-diagonal-lines text-slate-800 bg-slate-200 border border-slate-400 rounded-md mx-0.5 cursor-pointer transition-all', sel && 'ring-2 ring-blue-400 ring-offset-1')} style={{ width: w, minWidth: w }}>
                         {showFull ? (
-                          <div className="bg-white/95 backdrop-blur-sm px-2 py-1 border border-slate-200 rounded-lg shadow-sm flex flex-col items-center">
-                            <span className="text-[10px] font-bold truncate max-w-full">{item.label}</span>
-                            <span className="text-[10px] font-mono text-slate-500">
+                          <div className="bg-slate-50/90 backdrop-blur-sm px-2 py-1 border border-slate-400 rounded-lg shadow-sm flex flex-col items-center">
+                            <span className="text-[10px] font-bold text-slate-900 truncate max-w-full">{item.label}</span>
+                            <span className="text-[10px] font-mono text-slate-600">
                               {item.durationMs >= 1000 ? `${(item.durationMs / 1000).toFixed(2)} s` : `${item.durationMs.toFixed(0)} ms`}
                             </span>
                           </div>
                         ) : showCompact ? (
-                          <div className="bg-white/95 backdrop-blur-sm px-1 py-0.5 border border-slate-200 rounded shadow-sm flex flex-col items-center">
-                            <span className="text-[9px] font-mono text-slate-500">
+                          <div className="bg-slate-50/90 backdrop-blur-sm px-1 py-0.5 border border-slate-400 rounded shadow-sm flex flex-col items-center">
+                            <span className="text-[9px] font-mono text-slate-600">
                               {item.durationMs >= 1000 ? `${(item.durationMs / 1000).toFixed(1)}s` : `${item.durationMs.toFixed(0)}ms`}
                             </span>
                           </div>
                         ) : (
-                          <span className="text-[9px] font-bold rotate-90 whitespace-nowrap text-slate-500">{item.durationMs >= 1000 ? `${(item.durationMs / 1000).toFixed(0)}с` : 'W'}</span>
+                          <span className="text-[9px] font-bold rotate-90 whitespace-nowrap text-slate-600">{item.durationMs >= 1000 ? `${(item.durationMs / 1000).toFixed(0)}с` : 'W'}</span>
                         )}
                         <button onClick={(e) => { e.stopPropagation(); removeSeqItem(item.id); }} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-20">
                           <X className="w-3 h-3" />
@@ -643,13 +643,12 @@ export function CyclogramVisualizer({ devices, initialSequence, initialDcMode, o
                 </div>
                 <div className="flex items-center gap-2">
                   <label className="text-xs text-slate-500">Повторов/час:</label>
-                  <input
-                    type="number"
+                  <NumberInput
+                    value={repsPerHour}
+                    onChange={(v) => setRepsPerHour(v)}
                     min={0.1}
                     step={0.1}
-                    value={repsPerHour}
-                    onChange={(e) => setRepsPerHour(Math.max(0.1, Number(e.target.value)))}
-                    className="w-20 px-2 py-1.5 text-sm font-mono rounded-lg border border-slate-200 focus:border-blue-400 focus:outline-none bg-white"
+                    className="w-24 px-2 py-1.5 text-sm font-mono"
                   />
                 </div>
               </div>

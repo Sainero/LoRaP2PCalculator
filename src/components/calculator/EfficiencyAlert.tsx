@@ -2,6 +2,7 @@ import { AlertTriangle, Lightbulb } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { cn } from '@/lib/utils';
 import { LoRaParams, LoRaResults } from '@/types';
+import { useTheme } from '@/hooks/useTheme';
 
 interface EfficiencyAlertProps {
   params: LoRaParams;
@@ -10,6 +11,12 @@ interface EfficiencyAlertProps {
 }
 
 export function EfficiencyAlert({ params, results, chartData }: EfficiencyAlertProps) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  const gridStroke = isDark ? '#334155' : '#e2e8f0';
+  const axisStroke = isDark ? '#94a3b8' : '#64748b';
+  const tooltipBg = isDark ? '#1e293b' : '#ffffff';
+  const tooltipBorder = isDark ? '#334155' : '#e2e8f0';
   const preamblePercentage = (results.preambleMs / results.toaMs) * 100;
   // If overhead is more than 40% of the packet, we consider it inefficient
   const isInefficient = preamblePercentage > 40;
@@ -54,10 +61,10 @@ export function EfficiencyAlert({ params, results, chartData }: EfficiencyAlertP
           </p>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 5, right: 10, bottom: 5, left: -20 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridStroke} />
               <XAxis 
                 dataKey="payload" 
-                stroke="#64748b" 
+                stroke={axisStroke} 
                 fontSize={11}
                 tickLine={false}
                 axisLine={false}
@@ -65,14 +72,14 @@ export function EfficiencyAlert({ params, results, chartData }: EfficiencyAlertP
                 tickFormatter={(val) => `${val}B`}
               />
               <YAxis 
-                stroke="#64748b" 
+                stroke={axisStroke} 
                 fontSize={11}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(val) => `${val}%`}
               />
               <Tooltip 
-                contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px' }}
+                contentStyle={{ borderRadius: '12px', border: `1px solid ${tooltipBorder}`, backgroundColor: tooltipBg, color: isDark ? '#e2e8f0' : '#0f172a', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px' }}
                 formatter={(value: number, name: string) => [
                   name === 'overheadPercent' ? `${value}%` : `${value} ms`, 
                   name === 'overheadPercent' ? 'Доля Overhead' : 'Time on Air'

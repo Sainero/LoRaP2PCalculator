@@ -4,6 +4,7 @@ import { LoRaParams, LoRaResults, DeviceProfile } from "@/types";
 import { calculateToA } from "@/utils/lora";
 import { cn } from "@/lib/utils";
 import { CustomSelect } from "@/components/ui/CustomSelect";
+import { NumberInput } from "@/components/ui/NumberInput";
 
 interface NetworkCapacityProps {
   params: LoRaParams;
@@ -155,25 +156,24 @@ export function NetworkCapacity({ params, results, devices }: NetworkCapacityPro
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-slate-700 font-medium text-sm block mb-2">Сеансов в час на узел</label>
-                <input
-                  className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:outline-none transition-colors bg-white text-slate-900 font-mono text-sm"
-                  type="number"
+                <NumberInput
+                  value={sessionsPerHourPerNode}
+                  onChange={(v) => setSessionsPerHourPerNode(v)}
                   min={0.1}
                   step={0.1}
-                  value={sessionsPerHourPerNode}
-                  onChange={(e) => setSessionsPerHourPerNode(Math.max(0.1, Number(e.target.value)))}
+                  className="font-mono text-sm"
                 />
                 <p className="text-xs text-slate-500 mt-1.5">Интервал: <span className="font-mono text-blue-600">{(60 / sessionsPerHourPerNode).toFixed(1)}</span> мин.</p>
               </div>
               <div>
                 <label className="text-slate-700 font-medium text-sm block mb-2">Количество каналов (частот)</label>
-                <input
-                  className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:outline-none transition-colors bg-white text-slate-900 font-mono text-sm"
-                  type="number"
+                <NumberInput
+                  value={numChannels}
+                  onChange={(v) => setNumChannels(v)}
                   min={1}
                   max={64}
-                  value={numChannels}
-                  onChange={(e) => setNumChannels(Math.max(1, Math.min(64, Number(e.target.value))))}
+                  step={1}
+                  className="font-mono text-sm"
                 />
                 <p className="text-xs text-slate-500 mt-1.5">Для P2P обычно 1 канал.</p>
               </div>

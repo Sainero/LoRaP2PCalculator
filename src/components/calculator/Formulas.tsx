@@ -79,9 +79,9 @@ export function Formulas({ params, results }: FormulasProps) {
 
           {/* Step 4 & 5 */}
           <div className="bg-blue-600 rounded-xl p-5 text-white shadow-md">
-            <div className="font-sans font-medium mb-3 text-blue-100">4. Итоговое время (ToA)</div>
+            <div className="font-sans font-medium mb-3 text-white/90">4. Итоговое время (ToA)</div>
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 mb-2">
-              <span className="text-blue-50">T<sub>payload</sub> = N<sub>payload</sub> × T<sub>sym</sub> = {results.payloadSymbNb} × {fmt(results.tSymMs)} = {results.payloadPartMs.toFixed(3)} ms</span>
+              <span className="text-white/80">T<sub>payload</sub> = N<sub>payload</sub> × T<sub>sym</sub> = {results.payloadSymbNb} × {fmt(results.tSymMs)} = {results.payloadPartMs.toFixed(3)} ms</span>
             </div>
             <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4 border border-white/20">
               <span className="font-bold text-lg">ToA = T<sub>preamble</sub> + T<sub>payload</sub> = {results.toaMs.toFixed(3)} ms</span>

@@ -12,10 +12,10 @@ function Kpi({ label, value, unit, tone = 'default' }: { label: string; value: s
     tone === 'accent' ? 'text-amber-300' : 'text-white';
   return (
     <div className="flex flex-col leading-none">
-      <span className="text-[10px] uppercase tracking-wider text-blue-100/80 font-medium mb-1">{label}</span>
+      <span className="text-[10px] uppercase tracking-wider text-white/70 font-medium mb-1">{label}</span>
       <span className="flex items-baseline gap-1">
         <span className={`font-mono font-semibold tabular-nums ${tone === 'primary' ? 'text-2xl' : 'text-lg'} ${valueColor}`}>{value}</span>
-        <span className="text-[11px] text-blue-100/70">{unit}</span>
+        <span className="text-[11px] text-white/60">{unit}</span>
       </span>
     </div>
   );
@@ -39,7 +39,7 @@ export function StickyResultBar({ results, params }: StickyResultBarProps) {
   };
 
   return (
-    <div className="md:sticky md:top-4 md:z-20 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl shadow-lg shadow-blue-600/20 border border-blue-500/30 text-white px-4 sm:px-6 py-3.5">
+    <div className="md:sticky md:top-4 md:z-20 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-lg shadow-blue-600/20 border border-blue-500/30 text-white px-4 sm:px-6 py-3.5">
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 justify-between">
         {/* Left: label + config summary */}
         <div className="flex items-center gap-3 min-w-0">
@@ -47,8 +47,8 @@ export function StickyResultBar({ results, params }: StickyResultBarProps) {
             <Zap className="w-5 h-5" />
           </div>
           <div className="min-w-0">
-            <div className="text-[11px] uppercase tracking-wider text-blue-100 font-semibold">Результат</div>
-            <div className="text-xs text-blue-100/80 font-mono truncate">
+            <div className="text-[11px] uppercase tracking-wider text-white/90 font-semibold">Результат</div>
+            <div className="text-xs text-white/70 font-mono truncate">
               SF{params.sf} · {params.bw} kHz · 4/{params.cr + 4} · {totalPayload} B
             </div>
           </div>

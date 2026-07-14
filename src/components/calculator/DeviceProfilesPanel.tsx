@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Save, Trash2, Upload, Cpu, Radio } from 'lucide-react';
+import { Save, Trash2, Upload, Cpu, Radio, RefreshCw } from 'lucide-react';
 import { DeviceProfile, LoRaParams } from '@/types';
 
 interface DeviceProfilesPanelProps {
@@ -9,13 +9,14 @@ interface DeviceProfilesPanelProps {
   onSave: (name: string) => void;
   onLoad: (params: LoRaParams) => void;
   onRemove: (id: string) => void;
+  onUpdate: (id: string, params: LoRaParams, toaMs: number) => void;
 }
 
 function totalBytes(p: LoRaParams): number {
   return p.payload + (p.customBlocks?.reduce((acc, b) => acc + b.bytes, 0) || 0);
 }
 
-export function DeviceProfilesPanel({ devices, params, toaMs, onSave, onLoad, onRemove }: DeviceProfilesPanelProps) {
+export function DeviceProfilesPanel({ devices, params, toaMs, onSave, onLoad, onRemove, onUpdate }: DeviceProfilesPanelProps) {
   const [name, setName] = useState('');
 
   const handleSave = () => {
@@ -47,7 +48,7 @@ export function DeviceProfilesPanel({ devices, params, toaMs, onSave, onLoad, on
         />
         <button
           onClick={handleSave}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition-colors"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:brightness-90 text-white rounded-xl text-sm font-medium transition-all"
         >
           <Save className="w-4 h-4" />
           Сохранить текущую конфигурацию
@@ -84,6 +85,13 @@ export function DeviceProfilesPanel({ devices, params, toaMs, onSave, onLoad, on
                 title="Загрузить в редактор"
               >
                 <Upload className="w-3.5 h-3.5" /> Загрузить
+              </button>
+              <button
+                onClick={() => onUpdate(d.id, params, toaMs)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-amber-700 hover:bg-amber-100 border border-amber-200 rounded-lg text-xs font-medium transition-colors flex-shrink-0"
+                title="Перезаписать текущими настройками"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> Обновить
               </button>
               <button
                 onClick={() => onRemove(d.id)}

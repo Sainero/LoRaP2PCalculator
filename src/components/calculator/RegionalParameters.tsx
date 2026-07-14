@@ -7,10 +7,10 @@ export function RegionalParameters() {
       {/* Info Banner */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-lg p-6 text-white border border-indigo-500">
         <div className="flex items-center gap-3 mb-2">
-          <Globe className="w-6 h-6 text-indigo-100" />
+          <Globe className="w-6 h-6 text-white/80" />
           <h2 className="text-white font-bold text-xl">Справочник по ISM диапазонам (LoRa P2P)</h2>
         </div>
-        <p className="text-indigo-50 text-sm leading-relaxed mt-2 max-w-3xl">
+        <p className="text-white text-sm leading-relaxed mt-2 max-w-3xl">
           В отличие от LoRaWAN, в сетях P2P вы самостоятельно настраиваете параметры трансивера (частота, мощность, SF, BW). Тем не менее, <strong>вы обязаны аппаратно или программно соблюдать региональные законодательные ограничения</strong> на использование ISM (Industrial, Scientific, Medical) диапазонов, такие как максимальная излучаемая мощность и Duty Cycle (рабочий цикл).
         </p>
       </div>
@@ -160,59 +160,65 @@ export function RegionalParameters() {
           В P2P сетях ваш микроконтроллер (например, ESP32) должен программно отслеживать время отправки пакетов (ToA) и блокировать передатчик на нужное время, чтобы не нарушать закон. <strong>Duty Cycle считается как процент времени излучения за 1 час.</strong>
         </p>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {/* 0.1% Duty Cycle */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <div className="font-bold text-slate-900 text-lg">0.1%</div>
-              <span className="bg-white text-xs font-mono px-2 py-1 border border-slate-200 rounded text-slate-500">Жесткий лимит</span>
+        <div className="grid md:grid-cols-3 gap-4">
+          {/* 0.1% */}
+          <div className="border border-slate-300 rounded-xl overflow-hidden">
+            <div className="bg-slate-200 px-4 py-2.5 flex items-center justify-between">
+              <span className="font-bold text-slate-900 text-base">0.1%</span>
+              <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Жёсткий</span>
             </div>
-            <ul className="space-y-2 text-sm text-slate-700">
-              <li className="flex items-start gap-2">
-                <span className="text-blue-500 mt-0.5">•</span>
-                Максимум <strong>3.6 секунд</strong> эфира в час
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-blue-500 mt-0.5">•</span>
-                После передачи (например, 1 сек) устройство обязано молчать <strong>999 секунд</strong> (около 16 минут).
-              </li>
-            </ul>
+            <div className="px-4 py-3 space-y-2.5">
+              <div className="flex items-baseline gap-1.5 text-sm text-slate-700">
+                <span className="font-bold text-slate-900 text-lg">3.6 с</span>
+                <span className="text-xs text-slate-500">эфира в час</span>
+              </div>
+              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-full bg-slate-400 rounded-full" style={{ width: '0.1%' }} />
+              </div>
+              <div className="text-xs text-slate-500 leading-relaxed">
+                После передачи 1 с — молчать <strong className="text-slate-700">~16 мин</strong>
+              </div>
+            </div>
           </div>
 
-          {/* 1% Duty Cycle */}
-          <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <div className="font-bold text-indigo-900 text-lg">1%</div>
-              <span className="bg-white text-xs font-mono px-2 py-1 border border-indigo-200 rounded text-indigo-600 font-bold">Стандарт</span>
+          {/* 1% */}
+          <div className="border border-indigo-200 rounded-xl overflow-hidden">
+            <div className="bg-indigo-50 px-4 py-2.5 flex items-center justify-between">
+              <span className="font-bold text-indigo-900 text-base">1%</span>
+              <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Стандарт</span>
             </div>
-            <ul className="space-y-2 text-sm text-indigo-800">
-              <li className="flex items-start gap-2">
-                <span className="text-indigo-400 mt-0.5">•</span>
-                Максимум <strong>36 секунд</strong> эфира в час
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-indigo-400 mt-0.5">•</span>
-                После передачи (например, 1 сек) устройство обязано молчать <strong>99 секунд</strong>.
-              </li>
-            </ul>
+            <div className="px-4 py-3 space-y-2.5">
+              <div className="flex items-baseline gap-1.5 text-sm text-slate-700">
+                <span className="font-bold text-slate-900 text-lg">36 с</span>
+                <span className="text-xs text-slate-500">эфира в час</span>
+              </div>
+              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-full bg-indigo-500 rounded-full" style={{ width: '1%' }} />
+              </div>
+              <div className="text-xs text-slate-500 leading-relaxed">
+                После передачи 1 с — молчать <strong className="text-slate-700">99 с</strong>
+              </div>
+            </div>
           </div>
 
-          {/* 10% Duty Cycle */}
-          <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <div className="font-bold text-emerald-900 text-lg">10%</div>
-              <span className="bg-white text-xs font-mono px-2 py-1 border border-emerald-200 rounded text-emerald-600 font-bold">Высокий лимит</span>
+          {/* 10% */}
+          <div className="border border-emerald-200 rounded-xl overflow-hidden">
+            <div className="bg-emerald-50 px-4 py-2.5 flex items-center justify-between">
+              <span className="font-bold text-emerald-900 text-base">10%</span>
+              <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Высокий</span>
             </div>
-            <ul className="space-y-2 text-sm text-emerald-800">
-              <li className="flex items-start gap-2">
-                <span className="text-emerald-400 mt-0.5">•</span>
-                Максимум <strong>6 минут</strong> эфира в час
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-emerald-400 mt-0.5">•</span>
-                После передачи (например, 1 сек) устройство обязано молчать <strong>9 секунд</strong>.
-              </li>
-            </ul>
+            <div className="px-4 py-3 space-y-2.5">
+              <div className="flex items-baseline gap-1.5 text-sm text-slate-700">
+                <span className="font-bold text-slate-900 text-lg">6 мин</span>
+                <span className="text-xs text-slate-500">эфира в час</span>
+              </div>
+              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-full bg-emerald-500 rounded-full" style={{ width: '10%' }} />
+              </div>
+              <div className="text-xs text-slate-500 leading-relaxed">
+                После передачи 1 с — молчать <strong className="text-slate-700">9 с</strong>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -237,7 +243,15 @@ export function RegionalParameters() {
 
       {/* Packet Structure Table P2P vs LoRaWAN */}
       <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 border border-slate-100">
-        <h2 className="text-slate-900 font-bold text-lg mb-4">Максимальный размер Payload (P2P vs LoRaWAN)</h2>
+        <h2 className="text-slate-900 font-bold text-lg mb-2">Максимальный размер Payload (P2P vs LoRaWAN)</h2>
+        <p className="text-sm text-slate-600 mb-5 max-w-3xl leading-relaxed">
+          В LoRaWAN часть полезных данных съедается служебными полями MAC-уровня: заголовок (MHDR), адрес устройства (DevAddr),
+          счётчик пакетов (FCnt), MIC-код целостности — плюс опциональные MAC-команды. Поэтому спецификация ограничивает
+          payload до 51–222 байт в зависимости от SF. В P2P нет MAC-уровня: трансивер (SX127x/SX126x) имеет FIFO-буфер
+          255 байт, и вся ёмкость доступна для ваших данных. Регулятор (ETSI/ГКРЧ) не ограничивает размер пакета как таковой —
+          только эфирное время (Duty Cycle) и мощность. Но на практике большой payload при высоком SF означает длинную
+          передачу, которая быстро расходует эфирный лимит.
+        </p>
         <div className="overflow-x-auto rounded-xl border border-slate-200">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
@@ -254,10 +268,10 @@ export function RegionalParameters() {
                 <td className="py-3 px-4">125 kHz</td>
                 <td className="py-3 px-4">51 байт</td>
                 <td rowSpan={9} className="py-3 px-4 border-l border-slate-100 align-middle">
-                  <div className="font-bold text-indigo-700 mb-1">До 255 байт (всегда)</div>
+                  <div className="font-bold text-indigo-700 mb-1">до 255 байт</div>
                   <div className="text-xs text-slate-500 leading-relaxed max-w-xs">
-                    Ограничения трансивера SX127x/SX126x — буфер 255 байт. В P2P вы можете передать все 255 байт на любом SF и BW. 
-                    Однако при SF12 передача 255 байт займет <strong>более 8 секунд</strong>, что может нарушить Duty Cycle и увеличить риск коллизии.
+                    Весь FIFO-буфер трансивера (SX127x/SX126x) доступен для данных — нет служебных полей MAC.
+                    При SF12 передача 255 байт займёт <strong>~8 секунд</strong> — это почти четверть часового лимита 1% DC.
                   </div>
                 </td>
               </tr>
@@ -299,7 +313,7 @@ export function RegionalParameters() {
               <tr>
                 <td className="py-3 px-4 font-bold text-slate-900">SF6</td>
                 <td className="py-3 px-4">любая</td>
-                <td className="py-3 px-4">Не стандартизировано</td>
+                <td className="py-3 px-4 text-slate-500">Не в спецификации LoRaWAN</td>
               </tr>
             </tbody>
           </table>

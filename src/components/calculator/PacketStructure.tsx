@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Settings, Plus, X } from 'lucide-react';
 import { LoRaParams, CustomBlock } from '@/types';
+import { NumberInput } from '../ui/NumberInput';
 
 interface PacketStructureProps {
   params: LoRaParams;
@@ -102,13 +103,13 @@ export function PacketStructure({ params, updateParam }: PacketStructureProps) {
              <div className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm">
                <span className="text-slate-700 font-medium text-sm">Базовая нагрузка (User data)</span>
                <div className="flex items-center gap-2">
-                 <input
-                   className="w-24 px-3 py-1.5 rounded-lg border-2 border-slate-200 focus:border-blue-500 focus:outline-none transition-colors bg-white text-slate-900 text-sm"
-                   type="number"
+                 <NumberInput
+                   value={params.payload}
+                   onChange={(v) => updateParam('payload', v)}
                    min={1}
                    max={255}
-                   value={params.payload}
-                   onChange={(e) => updateParam('payload', Math.max(1, Math.min(255, Number(e.target.value))))}
+                   step={1}
+                   className="w-24 px-3 py-1.5 text-sm"
                  />
                  <span className="text-slate-500 text-xs w-4">B</span>
                </div>
@@ -123,18 +124,18 @@ export function PacketStructure({ params, updateParam }: PacketStructureProps) {
                  className="flex-1 px-3 py-2 rounded-lg border border-slate-300 focus:border-blue-500 focus:outline-none text-sm bg-white shadow-sm"
                />
                <div className="flex gap-3">
-                 <input
-                   type="number"
+                 <NumberInput
+                   value={newBlockBytes}
+                   onChange={(v) => setNewBlockBytes(v)}
                    min={1}
                    max={255}
-                   value={newBlockBytes}
-                   onChange={e => setNewBlockBytes(Math.max(1, Math.min(255, Number(e.target.value))))}
-                   className="w-24 px-3 py-2 rounded-lg border border-slate-300 focus:border-blue-500 focus:outline-none text-sm bg-white shadow-sm"
+                   step={1}
+                   className="w-24 px-3 py-2 text-sm"
                  />
                  <button
                    onClick={addBlock}
                    disabled={!newBlockLabel}
-                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm font-medium text-sm flex items-center gap-2"
+                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:brightness-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm font-medium text-sm flex items-center gap-2"
                  >
                    <Plus className="w-4 h-4" />
                    Добавить

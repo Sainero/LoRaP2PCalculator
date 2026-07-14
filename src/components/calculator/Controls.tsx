@@ -2,6 +2,7 @@ import React from 'react';
 import { Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LoRaParams } from '@/types';
+import { NumberInput } from '../ui/NumberInput';
 
 interface ControlsProps {
   params: LoRaParams;
@@ -43,14 +44,13 @@ export function Controls({ params, updateParam }: ControlsProps) {
           <div className="flex items-center gap-2 mb-2">
             <label className="text-slate-700 font-medium text-sm">Bandwidth (kHz)</label>
           </div>
-          <input
-            className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:outline-none transition-colors bg-white text-slate-900 font-mono"
-            type="number"
+          <NumberInput
+            value={params.bw}
+            onChange={(v) => updateParam('bw', v)}
             min={7.8}
             max={500}
             step={0.1}
-            value={params.bw}
-            onChange={(e) => updateParam('bw', Math.max(0, Math.min(500, Number(e.target.value))))}
+            className="font-mono"
           />
           <div className="grid grid-cols-3 gap-2 mt-3">
              {[125, 250, 500].map(val => (
@@ -97,13 +97,12 @@ export function Controls({ params, updateParam }: ControlsProps) {
           <div className="flex items-center gap-2 mb-2">
             <label className="text-slate-700 font-medium text-sm">Преамбула (символы)</label>
           </div>
-          <input
-            className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:outline-none transition-colors bg-white text-slate-900"
-            type="number"
+          <NumberInput
+            value={params.preamble}
+            onChange={(v) => updateParam('preamble', v)}
             min={4}
             max={65535}
-            value={params.preamble}
-            onChange={(e) => updateParam('preamble', Math.max(4, Math.min(65535, Number(e.target.value))))}
+            step={1}
           />
           <div className="text-slate-500 text-xs mt-2">Типично: 8 для LoRaWAN/P2P</div>
         </div>
@@ -156,27 +155,25 @@ export function Controls({ params, updateParam }: ControlsProps) {
             <div className="sm:col-span-2 grid grid-cols-2 gap-4 pl-3 pr-3">
               <div>
                 <label className="text-slate-700 font-medium text-sm block mb-1.5">Tcca (мс)</label>
-                <input
-                  className="w-full px-3 py-2 rounded-lg border-2 border-slate-200 focus:border-blue-500 focus:outline-none transition-colors bg-white text-slate-900 font-mono text-sm"
-                  type="number"
+                <NumberInput
+                  value={params.lbtTccaMs}
+                  onChange={(v) => updateParam('lbtTccaMs', v)}
                   min={0}
                   max={1000}
                   step={0.1}
-                  value={params.lbtTccaMs}
-                  onChange={(e) => updateParam('lbtTccaMs', Math.max(0, Math.min(1000, Number(e.target.value))))}
+                  className="font-mono text-sm"
                 />
                 <div className="text-slate-500 text-xs mt-1.5">Время проверки занятости канала</div>
               </div>
               <div>
                 <label className="text-slate-700 font-medium text-sm block mb-1.5">Tbo (мс)</label>
-                <input
-                  className="w-full px-3 py-2 rounded-lg border-2 border-slate-200 focus:border-blue-500 focus:outline-none transition-colors bg-white text-slate-900 font-mono text-sm"
-                  type="number"
+                <NumberInput
+                  value={params.lbtTboMs}
+                  onChange={(v) => updateParam('lbtTboMs', v)}
                   min={0}
                   max={1000}
                   step={0.1}
-                  value={params.lbtTboMs}
-                  onChange={(e) => updateParam('lbtTboMs', Math.max(0, Math.min(1000, Number(e.target.value))))}
+                  className="font-mono text-sm"
                 />
                 <div className="text-slate-500 text-xs mt-1.5">Окно backoff при занятом канале</div>
               </div>

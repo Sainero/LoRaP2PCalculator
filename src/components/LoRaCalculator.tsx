@@ -1,5 +1,5 @@
 import { useLoRaState } from '@/hooks/useLoRaState';
-import { RadioTower, Network, Calculator, BookOpen, Globe, Menu, X, ChevronDown, Info, Download, Upload } from 'lucide-react';
+import { RadioTower, Network, Calculator, BookOpen, Globe, Menu, X, ChevronDown, Info, Download, Upload, Sun, Moon } from 'lucide-react';
 import { Controls } from './calculator/Controls';
 import { PacketStructure } from './calculator/PacketStructure';
 import { ResultSidebar } from './calculator/ResultSidebar';
@@ -16,6 +16,7 @@ import { useState, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { SeqItem } from './calculator/CyclogramVisualizer';
 import { DeviceProfile, LoRaParams } from '@/types';
+import { useTheme } from '@/hooks/useTheme';
 
 type Tab = 'packet' | 'network' | 'glossary' | 'regional';
 
@@ -106,13 +107,14 @@ function NetworkGuide() {
 
 export default function LoRaCalculator() {
   const { params, setParams, updateParam, results, chartData } = useLoRaState();
-  const { devices, addDevice, removeDevice, replaceDevices } = useDeviceProfiles();
+  const { devices, addDevice, removeDevice, replaceDevices, updateDevice } = useDeviceProfiles();
   const [activeTab, setActiveTab] = useState<Tab>('packet');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [cyclogramKey, setCyclogramKey] = useState(0);
   const [savedSequence, setSavedSequence] = useState<SeqItem[]>([]);
   const [savedDcMode, setSavedDcMode] = useState<'strict' | 'burst'>('strict');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { theme, toggleTheme } = useTheme();
 
   const exportConfig = useCallback(() => {
     const config = {
@@ -267,9 +269,19 @@ export default function LoRaCalculator() {
           </div>
         </nav>
         
-        <div className="mt-8 px-4">
+        <div className="mt-6 px-4">
+          <button
+            onClick={toggleTheme}
+            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 transition-all duration-200 text-left"
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4 flex-shrink-0" /> : <Moon className="w-4 h-4 flex-shrink-0" />}
+            {theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
+          </button>
+        </div>
+
+        <div className="mt-4 px-4">
           <div className="bg-slate-200/50 p-4 rounded-xl text-xs text-slate-500">
-            Спроектируйте структуру пакета, рассчитайте Time on Air и Duty Cycle.
+            Спроектируйте пакет, постройте циклограмму обмена и оцените ёмкость сети.
           </div>
         </div>
       </aside>
@@ -302,6 +314,7 @@ export default function LoRaCalculator() {
                 onSave={(name) => addDevice(name, params, results.toaMs)}
                 onLoad={(p) => setParams(p)}
                 onRemove={removeDevice}
+                onUpdate={updateDevice}
               />
               <EfficiencyAlert params={params} results={results} chartData={chartData} />
               <Formulas params={params} results={results} />
