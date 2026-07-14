@@ -1,0 +1,8 @@
+{
+  "name": "LoRa P2P Cyclogram & Calculator",
+  "description": "Interactive calculator and cyclogram for LoRa P2P networks to understand Time on Air, Duty Cycle, and payload efficiency.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
