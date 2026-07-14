@@ -3,12 +3,12 @@ import { AlertTriangle, Info, Globe, Radio, FileText, ExternalLink } from "lucid
 
 export function RegionalParameters() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Info Banner */}
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-lg p-6 text-white border border-indigo-500">
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-lg p-4 sm:p-6 text-white border border-indigo-500">
         <div className="flex items-center gap-3 mb-2">
           <Globe className="w-6 h-6 text-white/80" />
-          <h2 className="text-white font-bold text-xl">Справочник по ISM диапазонам (LoRa P2P)</h2>
+          <h2 className="text-white font-bold text-lg sm:text-xl">Справочник по ISM диапазонам (LoRa P2P)</h2>
         </div>
         <p className="text-white text-sm leading-relaxed mt-2 max-w-3xl">
           В отличие от LoRaWAN, в сетях P2P вы самостоятельно настраиваете параметры трансивера (частота, мощность, SF, BW). Тем не менее, <strong>вы обязаны аппаратно или программно соблюдать региональные законодательные ограничения</strong> на использование ISM (Industrial, Scientific, Medical) диапазонов, такие как максимальная излучаемая мощность и Duty Cycle (рабочий цикл).
@@ -16,7 +16,7 @@ export function RegionalParameters() {
       </div>
 
       {/* Frequency Channels Table - RU868 */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 border border-slate-100">
+      <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 border border-slate-100">
         <div className="mb-6">
           <h2 className="text-slate-900 font-bold text-lg mb-2 flex items-center gap-2">
             <Radio className="w-5 h-5 text-indigo-600" />
@@ -95,7 +95,7 @@ export function RegionalParameters() {
       </div>
 
       {/* Frequency Channels Table - EU868 */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 border border-slate-100">
+      <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 border border-slate-100">
         <div className="mb-6">
           <h2 className="text-slate-900 font-bold text-lg mb-2 flex items-center gap-2">
             <Radio className="w-5 h-5 text-indigo-600" />
@@ -154,13 +154,13 @@ export function RegionalParameters() {
       </div>
 
       {/* Duty Cycle Information */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 border border-slate-100">
+      <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 border border-slate-100">
         <h2 className="text-slate-900 font-bold text-lg mb-4">Ограничения Duty Cycle (Рабочий цикл)</h2>
         <p className="text-sm text-slate-600 mb-6">
           В P2P сетях ваш микроконтроллер (например, ESP32) должен программно отслеживать время отправки пакетов (ToA) и блокировать передатчик на нужное время, чтобы не нарушать закон. <strong>Duty Cycle считается как процент времени излучения за 1 час.</strong>
         </p>
 
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* 0.1% */}
           <div className="border border-slate-300 rounded-xl overflow-hidden">
             <div className="bg-slate-200 px-4 py-2.5 flex items-center justify-between">
@@ -242,7 +242,7 @@ export function RegionalParameters() {
       </div>
 
       {/* Packet Structure Table P2P vs LoRaWAN */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 border border-slate-100">
+      <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 border border-slate-100">
         <h2 className="text-slate-900 font-bold text-lg mb-2">Максимальный размер Payload (P2P vs LoRaWAN)</h2>
         <p className="text-sm text-slate-600 mb-5 max-w-3xl leading-relaxed">
           В LoRaWAN часть полезных данных съедается служебными полями MAC-уровня: заголовок (MHDR), адрес устройства (DevAddr),
@@ -321,7 +321,7 @@ export function RegionalParameters() {
       </div>
 
       {/* Источники и нормативная база */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 border border-slate-100">
+      <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 border border-slate-100">
         <h2 className="text-slate-900 font-bold text-lg mb-3 flex items-center gap-2">
           <FileText className="w-5 h-5 text-indigo-600" />
           Источники и нормативная база

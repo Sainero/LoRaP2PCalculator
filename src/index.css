@@ -96,6 +96,10 @@
 
   /* Red tints */
   --color-red-50: #450a0a;
+
+  /* Pink tints */
+  --color-pink-50: #500725;
+  --color-pink-700: #f9a8d4;
 }
 
 /* In dark mode, bg-white becomes dark but text-white stays light */
@@ -136,3 +140,12 @@
 }
 
 /* Number input spinners handled per-component via NumberInput */
+
+/* Hide scrollbar for horizontal scroll areas on mobile */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}

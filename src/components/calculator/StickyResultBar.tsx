@@ -39,14 +39,14 @@ export function StickyResultBar({ results, params }: StickyResultBarProps) {
   };
 
   return (
-    <div className="md:sticky md:top-4 md:z-20 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-lg shadow-blue-600/20 border border-blue-500/30 text-white px-4 sm:px-6 py-3.5">
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 justify-between">
+    <div className="md:sticky md:top-4 md:z-20 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-lg shadow-blue-600/20 border border-blue-500/30 text-white px-3 sm:px-6 py-3 sm:py-3.5">
+      <div className="flex items-center gap-3 sm:gap-6 sm:flex-wrap sm:justify-between">
         {/* Left: label + config summary */}
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="flex items-center justify-center w-9 h-9 bg-white/15 rounded-lg flex-shrink-0">
-            <Zap className="w-5 h-5" />
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-shrink-0">
+          <div className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 bg-white/15 rounded-lg flex-shrink-0">
+            <Zap className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 hidden sm:block">
             <div className="text-[11px] uppercase tracking-wider text-white/90 font-semibold">Результат</div>
             <div className="text-xs text-white/70 font-mono truncate">
               SF{params.sf} · {params.bw} kHz · 4/{params.cr + 4} · {totalPayload} B
@@ -54,8 +54,8 @@ export function StickyResultBar({ results, params }: StickyResultBarProps) {
           </div>
         </div>
 
-        {/* Right: KPIs + copy */}
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 sm:gap-x-8">
+        {/* Right: KPIs + copy — horizontally scrollable on mobile */}
+        <div className="flex items-center gap-4 sm:gap-6 sm:gap-x-8 overflow-x-auto scrollbar-none flex-1 sm:flex-none">
           <Kpi label="Time on Air" value={results.toaMs.toFixed(1)} unit="мс" tone="primary" />
           <Kpi label="Битрейт" value={rate.value} unit={rate.unit} />
           {params.dutyCycle < 100 && (

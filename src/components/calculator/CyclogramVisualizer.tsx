@@ -165,7 +165,7 @@ export function CyclogramVisualizer({ devices, initialSequence, initialDcMode, o
 
   const fitToWidth = () => {
     if (totalSeqTimeMs === 0) return;
-    const containerWidth = 760;
+    const containerWidth = typeof window !== 'undefined' ? Math.min(window.innerWidth - 80, 760) : 760;
     const ideal = containerWidth / (totalSeqTimeSec || 1);
     setPxPerSec(Math.max(15, Math.min(400, Math.round(ideal * 10) / 10)));
   };
@@ -177,7 +177,7 @@ export function CyclogramVisualizer({ devices, initialSequence, initialDcMode, o
 
   if (devices.length === 0) {
     return (
-      <div className="bg-white rounded-2xl p-6 md:p-8 border border-slate-100 shadow-lg">
+      <div className="bg-white rounded-2xl p-4 sm:p-6 md:p-8 border border-slate-100 shadow-lg">
         <div className="flex items-center gap-2 mb-4">
           <Clock className="w-5 h-5 text-blue-600" />
           <h3 className="text-slate-900 font-semibold text-lg">Циклограмма обмена</h3>
@@ -234,7 +234,7 @@ export function CyclogramVisualizer({ devices, initialSequence, initialDcMode, o
 
   const addRx = () => {
     const r = deviceResults(active.params);
-    setSequence((prev) => [...prev, { id: rid(), type: 'RX', label: 'Окно приёма (RX)', durationMs: r.toaMs, details: `Прослушивание · ${active.name}` }]);
+    setSequence((prev) => [...prev, { id: rid(), type: 'RX', deviceId: active.id, label: 'Окно приёма (RX)', durationMs: r.toaMs, details: `Прослушивание · ${active.name}` }]);
   };
 
   const addWait = (ms: number, label: string) => {
@@ -257,11 +257,11 @@ export function CyclogramVisualizer({ devices, initialSequence, initialDcMode, o
   const totalSeqTimeMs = sequence.reduce((acc, item) => acc + item.durationMs, 0);
   const totalSeqTimeSec = totalSeqTimeMs / 1000;
 
-  // Duty cycle по каждому устройству: учитывается только собственное излучение (TX).
-  const txDeviceIds: string[] = Array.from(
-    new Set(sequence.filter((i): i is SeqItem & { deviceId: string } => i.type === 'TX' && !!i.deviceId).map((i) => i.deviceId))
+  // Устройства, участвующие в циклограмме (TX или RX).
+  const participatingDeviceIds: string[] = Array.from(
+    new Set(sequence.filter((i): i is SeqItem & { deviceId: string } => (i.type === 'TX' || i.type === 'RX') && !!i.deviceId).map((i) => i.deviceId))
   );
-  const dcRows = txDeviceIds.map((id) => {
+  const dcRows = participatingDeviceIds.map((id) => {
     const dev = devices.find((d) => d.id === id);
     const limit = dev?.params.dutyCycle ?? 1;
     const airtime = sequence.filter((i) => i.type === 'TX' && i.deviceId === id).reduce((acc, i) => acc + i.durationMs, 0);
@@ -279,7 +279,9 @@ export function CyclogramVisualizer({ devices, initialSequence, initialDcMode, o
     const limitSec = (limit / 100) * (dcMode === 'strict' ? totalSeqTimeSec : 3600);
     const usedSec = effectiveAirtime / 1000;
     const remainingSec = Math.max(0, limitSec - usedSec);
-    return { id, name: dev?.name ?? '—', airtime, limit, used, compliant, deficit, requiredWindow, burstsPerHour, colorIdx: colorIndex(id), limitSec, usedSec, remainingSec };
+    const txCount = sequence.filter((i) => i.type === 'TX' && i.deviceId === id).length;
+    const rxCount = sequence.filter((i) => i.type === 'RX' && i.deviceId === id).length;
+    return { id, name: dev?.name ?? '—', airtime, limit, used, compliant, deficit, requiredWindow, burstsPerHour, colorIdx: colorIndex(id), limitSec, usedSec, remainingSec, txCount, rxCount };
   });
   const allCompliant = dcRows.every((r) => r.compliant);
 
@@ -293,7 +295,7 @@ export function CyclogramVisualizer({ devices, initialSequence, initialDcMode, o
   const scenarioCollTone = scenarioPPct < 5 ? 'ok' : scenarioPPct < 10 ? 'warn' : 'bad';
 
   return (
-    <div ref={containerRef} tabIndex={0} className="bg-white rounded-2xl p-6 md:p-8 border border-slate-100 shadow-lg focus:outline-none">
+    <div ref={containerRef} tabIndex={0} className="bg-white rounded-2xl p-4 sm:p-6 md:p-8 border border-slate-100 shadow-lg focus:outline-none">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
         <div className="flex items-center gap-2">
           <Clock className="w-5 h-5 text-blue-600" />
@@ -360,7 +362,7 @@ export function CyclogramVisualizer({ devices, initialSequence, initialDcMode, o
 
             <div className="flex flex-wrap items-center gap-2">
               {/* Режим DC */}
-              <div className="flex items-center bg-slate-100 border border-slate-200 rounded-lg p-0.5 h-8">
+              <div className="flex items-center bg-slate-100 border border-slate-200 rounded-lg p-0.5 h-8 flex-shrink-0">
                 <button
                   onClick={() => setDcMode('strict')}
                   className={cn('px-2.5 h-7 rounded-md text-[11px] font-medium transition-colors', dcMode === 'strict' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700')}
@@ -400,22 +402,24 @@ export function CyclogramVisualizer({ devices, initialSequence, initialDcMode, o
             </div>
 
             {devices.length >= 2 && (
-              <div className="flex flex-wrap items-center gap-2 bg-indigo-50/50 border border-indigo-100 rounded-lg p-2.5">
-                <span className="text-[11px] font-medium text-indigo-700">Диалог:</span>
-                <CustomSelect value={active.id} onChange={setActiveId} options={devices.map((d) => ({ value: d.id, label: d.name }))} className="w-36" />
-                <ArrowRight className="w-4 h-4 text-indigo-400" />
-                <CustomSelect value={responder.id} onChange={setResponderId} options={devices.map((d) => ({ value: d.id, label: d.name }))} className="w-36" />
-                <button onClick={addDialog} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white hover:brightness-90 rounded-lg text-xs font-medium transition-all">
+              <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 bg-indigo-50/50 border border-indigo-100 rounded-lg p-2.5">
+                <span className="text-[11px] font-medium text-indigo-700 flex-shrink-0">Диалог:</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <CustomSelect value={active.id} onChange={setActiveId} options={devices.map((d) => ({ value: d.id, label: d.name }))} className="w-32 sm:w-36" />
+                  <ArrowRight className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+                  <CustomSelect value={responder.id} onChange={setResponderId} options={devices.map((d) => ({ value: d.id, label: d.name }))} className="w-32 sm:w-36" />
+                </div>
+                <button onClick={addDialog} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white hover:brightness-90 rounded-lg text-xs font-medium transition-all flex-shrink-0">
                   <ArrowRight className="w-3.5 h-3.5" /> Запрос → Ответ
                 </button>
               </div>
             )}
           </div>
 
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 sm:p-4">
             {sequence.length > 0 && (
-              <div className="flex items-center justify-between mb-3 sticky top-0 bg-slate-50 py-1 z-10">
-                <div className="flex items-center gap-1.5">
+              <div className="flex items-center justify-between mb-3 sticky top-0 bg-slate-50 py-1 z-10 gap-2">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <button
                     onClick={() => setPxPerSec((p) => Math.max(15, Math.round(p / 1.5 * 10) / 10))}
                     className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
@@ -530,13 +534,14 @@ export function CyclogramVisualizer({ devices, initialSequence, initialDcMode, o
                       );
                     }
                     if (item.type === 'RX') {
+                      const c = DEVICE_COLORS[colorIndex(item.deviceId)];
                       return (
-                        <div key={item.id} onClick={(e) => handleBlockClick(e, idx)} className={cn('group relative flex flex-col justify-center items-center bg-emerald-500 text-white px-1 rounded-md shadow-sm border border-emerald-600 z-10 mx-0.5 cursor-pointer transition-all', sel && 'ring-2 ring-blue-400 ring-offset-1')} style={{ width: w, minWidth: w }}>
+                        <div key={item.id} onClick={(e) => handleBlockClick(e, idx)} className={cn('group relative flex flex-col justify-center items-center text-white px-1 rounded-md shadow-sm border z-10 mx-0.5 cursor-pointer transition-all', `${c.bg} opacity-60 ${c.border}`, sel && 'ring-2 ring-blue-400 ring-offset-1')} style={{ width: w, minWidth: w }}>
                           {showFull ? (
                             <>
                               <span className="text-[11px] font-bold tracking-wide text-center px-1 leading-tight">{item.label}</span>
                               <span className="text-[10px] font-mono mt-0.5">{item.durationMs.toFixed(0)} ms</span>
-                              <span className="text-[9px] opacity-80 mt-0.5 text-center px-1 leading-tight">{item.details}</span>
+                              <span className="text-[9px] opacity-90 mt-0.5 text-center px-1 leading-tight">{item.details}</span>
                             </>
                           ) : showCompact ? (
                             <>
@@ -613,19 +618,28 @@ export function CyclogramVisualizer({ devices, initialSequence, initialDcMode, o
                       <span className={`w-2.5 h-2.5 rounded-sm ${DEVICE_COLORS[r.colorIdx].bg}`} />
                       <span className="font-medium text-slate-700 truncate">{r.name}</span>
                     </span>
-                    <span className="font-mono text-slate-600">
-                      эфир {r.usedSec.toFixed(2)} с{dcMode === 'burst' && repsPerHour !== 1 ? ` (${r.airtime.toFixed(0)} мс × ${repsPerHour})` : ''}
+                    <span className="font-mono text-[11px] text-slate-400">
+                      {r.txCount > 0 ? `${r.txCount} TX` : 'только приём'}{r.rxCount > 0 ? ` · ${r.rxCount} RX` : ''}
                     </span>
-                    <span className="font-mono text-slate-500">лимит {r.limitSec.toFixed(1)} с</span>
-                    <span className="font-mono">занято <strong className={r.compliant ? 'text-emerald-700' : 'text-rose-700'}>{r.used.toFixed(2)}%</strong> / {r.limit}%</span>
-                    <span className={`font-mono ${r.compliant ? 'text-emerald-700' : 'text-rose-700'}`}>
-                      {r.compliant ? `осталось ${r.remainingSec.toFixed(1)} с` : `перебор на ${(r.usedSec - r.limitSec).toFixed(1)} с`}
-                    </span>
-                    {dcMode === 'burst' && (
-                      <span className={r.compliant ? 'text-emerald-700' : 'text-rose-700'}>макс. {r.burstsPerHour}/час{repsPerHour > r.burstsPerHour ? ` — превышение на ${repsPerHour - r.burstsPerHour}` : ''}</span>
-                    )}
-                    {dcMode === 'strict' && !r.compliant && (
-                      <span className="text-rose-700">добавьте ~{(r.deficit / 1000).toFixed(1)} с тишины</span>
+                    {r.txCount > 0 ? (
+                      <>
+                        <span className="font-mono text-slate-600">
+                          эфир {r.usedSec.toFixed(2)} с{dcMode === 'burst' && repsPerHour !== 1 ? ` (${r.airtime.toFixed(0)} мс × ${repsPerHour})` : ''}
+                        </span>
+                        <span className="font-mono text-slate-500">лимит {r.limitSec.toFixed(1)} с</span>
+                        <span className="font-mono">занято <strong className={r.compliant ? 'text-emerald-700' : 'text-rose-700'}>{r.used.toFixed(2)}%</strong> / {r.limit}%</span>
+                        <span className={`font-mono ${r.compliant ? 'text-emerald-700' : 'text-rose-700'}`}>
+                          {r.compliant ? `осталось ${r.remainingSec.toFixed(1)} с` : `перебор на ${(r.usedSec - r.limitSec).toFixed(1)} с`}
+                        </span>
+                        {dcMode === 'burst' && (
+                          <span className={r.compliant ? 'text-emerald-700' : 'text-rose-700'}>макс. {r.burstsPerHour}/час{repsPerHour > r.burstsPerHour ? ` — превышение на ${repsPerHour - r.burstsPerHour}` : ''}</span>
+                        )}
+                        {dcMode === 'strict' && !r.compliant && (
+                          <span className="text-rose-700">добавьте ~{(r.deficit / 1000).toFixed(1)} с тишины</span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="font-mono text-slate-400">эфир 0 с · DC не расходуется</span>
                     )}
                   </div>
                 ))}

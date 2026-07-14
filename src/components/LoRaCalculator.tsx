@@ -9,6 +9,7 @@ import { EfficiencyAlert } from './calculator/EfficiencyAlert';
 import { Formulas } from './calculator/Formulas';
 import { DeviceProfilesPanel } from './calculator/DeviceProfilesPanel';
 import { NetworkCapacity } from './calculator/NetworkCapacity';
+import { DcCapacityPanel } from './calculator/DcCapacityPanel';
 import { useDeviceProfiles } from '@/hooks/useDeviceProfiles';
 import { Glossary } from './calculator/Glossary';
 import { RegionalParameters } from './calculator/RegionalParameters';
@@ -26,7 +27,7 @@ function NetworkGuide() {
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left hover:bg-slate-50 transition-colors"
+        className="w-full flex items-center justify-between gap-3 sm:gap-4 px-4 sm:px-5 py-3.5 sm:py-4 text-left hover:bg-slate-50 transition-colors"
       >
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex items-center justify-center w-9 h-9 bg-blue-50 text-blue-600 rounded-lg flex-shrink-0">
@@ -45,7 +46,7 @@ function NetworkGuide() {
       </button>
 
       {open && (
-        <div className="px-5 pb-6 pt-2 border-t border-slate-100 space-y-4 text-sm text-slate-600 leading-relaxed">
+        <div className="px-4 sm:px-5 pb-6 pt-2 border-t border-slate-100 space-y-4 text-sm text-slate-600 leading-relaxed">
           <div>
             <h4 className="font-semibold text-slate-800 mb-1.5">Циклограмма</h4>
             <p>
@@ -206,23 +207,42 @@ export default function LoRaCalculator() {
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-200 flex flex-col md:flex-row">
       
       {/* Mobile Header */}
-      <div className="md:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-30">
-        <div className="flex items-center gap-3">
+      <div className="md:hidden bg-white border-b border-slate-200 px-3 py-2.5 flex items-center justify-between sticky top-0 z-30">
+        <div className="flex items-center gap-2.5">
           <div className="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-lg shadow-sm shadow-blue-600/20">
             <RadioTower className="w-4 h-4 text-white" />
           </div>
           <h1 className="font-bold text-slate-900 text-sm leading-tight">LoRa P2P<br/>Calculator</h1>
         </div>
-        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-600 bg-slate-100 rounded-lg">
-          {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button onClick={toggleTheme} className="p-2 text-slate-600 bg-slate-100 rounded-lg" title="Сменить тему">
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-600 bg-slate-100 rounded-lg">
+            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 top-[73px] bg-slate-900/20 backdrop-blur-sm z-20" onClick={() => setIsMobileMenuOpen(false)}>
+        <div className="md:hidden fixed inset-0 top-[57px] bg-slate-900/20 backdrop-blur-sm z-20" onClick={() => setIsMobileMenuOpen(false)}>
           <div className="bg-white p-4 border-b border-slate-200 shadow-xl" onClick={e => e.stopPropagation()}>
             <NavContent />
+            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100">
+              <button
+                onClick={exportConfig}
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+              >
+                <Download className="w-4 h-4" /> Сохранить
+              </button>
+              <button
+                onClick={() => { fileInputRef.current?.click(); setIsMobileMenuOpen(false); }}
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+              >
+                <Upload className="w-4 h-4" /> Загрузить
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -287,16 +307,16 @@ export default function LoRaCalculator() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 min-w-0 p-4 md:p-8 lg:p-10">
+      <main className="flex-1 min-w-0 p-3 sm:p-4 md:p-8 lg:p-10">
         <div className="max-w-[1440px] mx-auto">
           {/* Tab Content */}
           {activeTab === 'packet' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
               {/* Compact sticky KPI bar — always visible while scrolling */}
               <StickyResultBar results={results} params={params} />
 
               {/* Radio params + detailed breakdown side by side */}
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
                 <div className="xl:col-span-2">
                   <Controls params={params} updateParam={updateParam} />
                 </div>
@@ -322,7 +342,7 @@ export default function LoRaCalculator() {
           )}
 
           {activeTab === 'network' && (
-            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="space-y-3 sm:space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <CyclogramVisualizer
                 key={cyclogramKey}
                 devices={devices}
@@ -333,6 +353,8 @@ export default function LoRaCalculator() {
               />
 
               <NetworkGuide />
+
+              <DcCapacityPanel devices={devices} />
 
               <NetworkCapacity params={params} results={results} devices={devices} />
             </div>

@@ -22,7 +22,7 @@ export function EfficiencyAlert({ params, results, chartData }: EfficiencyAlertP
   const isInefficient = preamblePercentage > 40;
 
   return (
-    <div className="bg-white rounded-2xl p-6 md:p-8 border border-slate-100 shadow-lg">
+    <div className="bg-white rounded-2xl p-4 sm:p-6 md:p-8 border border-slate-100 shadow-lg">
       <div className="flex flex-col lg:flex-row gap-8 items-start">
         
         <div className="flex-1 space-y-5">

@@ -95,7 +95,7 @@ export function NetworkCapacity({ params, results, devices }: NetworkCapacityPro
       {/* Заголовок-кнопка со сводкой */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left hover:bg-slate-50 transition-colors"
+        className="w-full flex items-center justify-between gap-3 px-4 sm:px-5 py-3.5 sm:py-4 text-left hover:bg-slate-50 transition-colors"
       >
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex items-center justify-center w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex-shrink-0">
@@ -111,7 +111,7 @@ export function NetworkCapacity({ params, results, devices }: NetworkCapacityPro
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-4 flex-shrink-0">
+        <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
           <div className="hidden sm:flex flex-col items-end leading-none">
             <span className={cn("text-lg font-mono font-semibold tabular-nums", collTone === "ok" ? "text-emerald-600" : collTone === "warn" ? "text-amber-600" : "text-rose-600")}>{pPct.toFixed(1)}%</span>
             <span className="text-[10px] text-slate-400 mt-0.5">вер. коллизии</span>
@@ -121,7 +121,7 @@ export function NetworkCapacity({ params, results, devices }: NetworkCapacityPro
       </button>
 
       {open && (
-        <div className="px-5 pb-6 pt-2 border-t border-slate-100 space-y-6">
+        <div className="px-4 sm:px-5 pb-6 pt-2 border-t border-slate-100 space-y-6">
           {/* Компактные контролы */}
           <div className="space-y-5 mt-4">
             {devices.length > 0 && (
@@ -153,7 +153,7 @@ export function NetworkCapacity({ params, results, devices }: NetworkCapacityPro
               <p className="text-xs text-slate-500 mt-1.5">Конкурентный доступ без координатора на одном канале.</p>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-slate-700 font-medium text-sm block mb-2">Сеансов в час на узел</label>
                 <NumberInput

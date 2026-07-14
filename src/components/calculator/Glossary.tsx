@@ -2,13 +2,13 @@ import { Info, BookOpen, Layers, Zap, Hash } from "lucide-react";
 
 export function Glossary() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       
-      <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 border border-slate-100">
+      <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 border border-slate-100">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <BookOpen className="w-6 h-6 text-blue-600" />
-            <h2 className="text-2xl font-bold text-slate-900">Глоссарий и архитектура P2P</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Глоссарий и архитектура P2P</h2>
           </div>
           <span className="px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase bg-blue-50 text-blue-700 border border-blue-200">LoRa P2P</span>
         </div>
@@ -19,7 +19,7 @@ export function Glossary() {
       </div>
 
       {/* Physical Layer Structure */}
-      <section className="bg-white rounded-2xl shadow-lg p-6 md:p-8 border border-slate-100">
+      <section className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 border border-slate-100">
           <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
             <Layers className="w-5 h-5 text-slate-500" /> Структура физического кадра (PHY)
           </h3>
@@ -54,11 +54,11 @@ export function Glossary() {
         </section>
 
       {/* Radio Parameters */}
-      <section className="bg-white rounded-2xl shadow-lg p-6 md:p-8 border border-slate-100">
+      <section className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 border border-slate-100">
           <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
             <Zap className="w-5 h-5 text-slate-500" /> Параметры радиосигнала
           </h3>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               { k: 'Spreading Factor (SF)', v: 'SF6 – SF12', d: 'Определяет "размазывание" сигнала во времени. Увеличение SF на 1 увеличивает дальность связи, но удваивает время передачи (Time on Air). SF6 — самый быстрый, SF12 — самый дальнобойный.' },
               { k: 'Bandwidth (BW)', v: 'Ширина канала', d: 'Обычно 125, 250 или 500 кГц. Чем шире полоса, тем быстрее передача, но ниже чувствительность приемника (меньше дальность).' },
@@ -77,11 +77,11 @@ export function Glossary() {
         </section>
 
       {/* Network specific */}
-      <section className="bg-white rounded-2xl shadow-lg p-6 md:p-8 border border-slate-100">
+      <section className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 border border-slate-100">
           <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
             <Hash className="w-5 h-5 text-slate-500" /> Отличия P2P сетей
           </h3>
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid sm:grid-cols-2 gap-4">
             <div className="bg-amber-50 rounded-xl p-5 border border-amber-100">
               <h4 className="font-bold text-amber-900 mb-2">Нет встроенной адресации и шифрования</h4>
               <p className="text-sm text-amber-800 leading-relaxed">

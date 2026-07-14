@@ -25,7 +25,7 @@ export function ResultSidebar({ results, params }: ResultSidebarProps) {
   const preambleOverhead = ((results.preambleMs / results.toaMs) * 100).toFixed(1);
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-100">
+    <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 border border-slate-100">
       <h2 className="text-slate-900 font-semibold text-lg mb-5">Детали расчёта</h2>
 
       {/* Total ToA hero */}
