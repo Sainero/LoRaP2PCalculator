@@ -56,5 +56,9 @@ export function useDeviceProfiles() {
 
   const clearDevices = useCallback(() => setDevices([]), []);
 
-  return { devices, addDevice, updateDevice, renameDevice, removeDevice, clearDevices };
+  const replaceDevices = useCallback((newDevices: DeviceProfile[]) => {
+    setDevices(newDevices);
+  }, []);
+
+  return { devices, addDevice, updateDevice, renameDevice, removeDevice, clearDevices, replaceDevices };
 }

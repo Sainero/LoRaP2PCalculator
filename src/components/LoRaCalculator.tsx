@@ -1,5 +1,5 @@
 import { useLoRaState } from '@/hooks/useLoRaState';
-import { RadioTower, Network, Calculator, BookOpen, Globe, Menu, X, ChevronDown, Info } from 'lucide-react';
+import { RadioTower, Network, Calculator, BookOpen, Globe, Menu, X, ChevronDown, Info, Download, Upload } from 'lucide-react';
 import { Controls } from './calculator/Controls';
 import { PacketStructure } from './calculator/PacketStructure';
 import { ResultSidebar } from './calculator/ResultSidebar';
@@ -12,8 +12,10 @@ import { NetworkCapacity } from './calculator/NetworkCapacity';
 import { useDeviceProfiles } from '@/hooks/useDeviceProfiles';
 import { Glossary } from './calculator/Glossary';
 import { RegionalParameters } from './calculator/RegionalParameters';
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
+import { SeqItem } from './calculator/CyclogramVisualizer';
+import { DeviceProfile, LoRaParams } from '@/types';
 
 type Tab = 'packet' | 'network' | 'glossary' | 'regional';
 
@@ -57,13 +59,14 @@ function NetworkGuide() {
             <ul className="space-y-1.5 pl-4 list-disc">
               <li>
                 <strong>Стандарт</strong> — после каждого TX вставляется пауза Duty Cycle (как в LoRaWAN).
-                Диалог включает окно обработки 1 с (RX1) и остаток паузы DC. DC считается по окну сценария.
+                Диалог включает окно обработки 1 с (RX1), паузу DC ответчика и остаток DC инициатора.
+                DC считается по окну сценария.
               </li>
               <li>
                 <strong>Быстрый</strong> — TX подряд без пауз. Диалог «Запрос → Ответ» сразу TX → TX.
-                Паузу на обработку можно добавить «Свободной паузой». DC считается по часовому окну:
-                можно выжечь лимит за минуту, но потом молчать остаток часа. Панель показывает, сколько
-                таких бёрстов уложится в лимит.
+                Паузу на обработку можно добавить «Свободной паузой». DC считается по часовому окну
+                с учётом повторов/час: можно выжечь лимит за минуту, но потом молчать остаток часа.
+                Панель показывает, сколько таких бёрстов уложится в лимит.
               </li>
             </ul>
           </div>
@@ -103,9 +106,54 @@ function NetworkGuide() {
 
 export default function LoRaCalculator() {
   const { params, setParams, updateParam, results, chartData } = useLoRaState();
-  const { devices, addDevice, removeDevice } = useDeviceProfiles();
+  const { devices, addDevice, removeDevice, replaceDevices } = useDeviceProfiles();
   const [activeTab, setActiveTab] = useState<Tab>('packet');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [cyclogramKey, setCyclogramKey] = useState(0);
+  const [savedSequence, setSavedSequence] = useState<SeqItem[]>([]);
+  const [savedDcMode, setSavedDcMode] = useState<'strict' | 'burst'>('strict');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const exportConfig = useCallback(() => {
+    const config = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      params,
+      devices,
+      cyclogram: { sequence: savedSequence, dcMode: savedDcMode },
+    };
+    const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `lora-config-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [params, devices, savedSequence, savedDcMode]);
+
+  const importConfig = useCallback((e: { target: { files: FileList | null; value: string } }) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const config = JSON.parse(reader.result as string);
+        if (config.params) setParams(config.params as LoRaParams);
+        if (config.devices) {
+          replaceDevices(config.devices as DeviceProfile[]);
+        }
+        if (config.cyclogram) {
+          setSavedSequence(config.cyclogram.sequence ?? []);
+          setSavedDcMode(config.cyclogram.dcMode ?? 'strict');
+        }
+        setCyclogramKey((k) => k + 1);
+      } catch {
+        alert('Ошибка чтения файла конфигурации');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }, [setParams, replaceDevices]);
 
   const NavContent = () => (
     <div className="flex flex-col gap-2">
@@ -192,6 +240,31 @@ export default function LoRaCalculator() {
         <nav className="flex-1">
           <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 px-4 mt-2">Инструменты</h2>
           <NavContent />
+
+          <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 px-4 mt-6">Конфигурация</h2>
+          <div className="flex flex-col gap-2 px-4">
+            <button
+              onClick={exportConfig}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 transition-all duration-200 text-left"
+            >
+              <Download className="w-4 h-4 flex-shrink-0" />
+              Сохранить конфиг
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 transition-all duration-200 text-left"
+            >
+              <Upload className="w-4 h-4 flex-shrink-0" />
+              Загрузить конфиг
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/json,.json"
+              onChange={importConfig}
+              className="hidden"
+            />
+          </div>
         </nav>
         
         <div className="mt-8 px-4">
@@ -237,7 +310,14 @@ export default function LoRaCalculator() {
 
           {activeTab === 'network' && (
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <CyclogramVisualizer devices={devices} />
+              <CyclogramVisualizer
+                key={cyclogramKey}
+                devices={devices}
+                initialSequence={savedSequence}
+                initialDcMode={savedDcMode}
+                onSequenceChange={setSavedSequence}
+                onDcModeChange={setSavedDcMode}
+              />
 
               <NetworkGuide />
 

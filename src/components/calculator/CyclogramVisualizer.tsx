@@ -1,21 +1,27 @@
-import { Clock, X, ArrowRight, Timer, Trash2, Activity, CheckCircle2, AlertTriangle, Radio, Cpu } from 'lucide-react';
+import { Clock, X, ArrowRight, Timer, Trash2, Activity, CheckCircle2, AlertTriangle, Radio, Cpu, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Undo2, Redo2 } from 'lucide-react';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import { DeviceProfile, LoRaParams } from '@/types';
 import { calculateToA } from '@/utils/lora';
 import { motion } from 'motion/react';
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { cn } from '@/lib/utils';
 
-interface CyclogramVisualizerProps {
-  devices: DeviceProfile[];
-}
-
-interface SeqItem {
+export interface SeqItem {
   id: string;
   type: 'TX' | 'RX' | 'WAIT';
   label: string;
   durationMs: number;
   details: string;
   deviceId?: string;
+}
+
+interface CyclogramVisualizerProps {
+  devices: DeviceProfile[];
+  initialSequence?: SeqItem[];
+  initialDcMode?: 'strict' | 'burst';
+  key?: string | number;
+  onSequenceChange?: (seq: SeqItem[]) => void;
+  onDcModeChange?: (mode: 'strict' | 'burst') => void;
 }
 
 const rid = () => Math.random().toString(36).substring(2, 9);
@@ -37,13 +43,131 @@ function deviceResults(p: LoRaParams) {
   return { toaMs, preambleMs: r.tPreamble * 1000, payloadPartMs: r.tPayload * 1000, waitTimeMs, totalPayload };
 }
 
-export function CyclogramVisualizer({ devices }: CyclogramVisualizerProps) {
+export function CyclogramVisualizer({ devices, initialSequence, initialDcMode, onSequenceChange, onDcModeChange }: CyclogramVisualizerProps) {
   const [customWaitSec, setCustomWaitSec] = useState<number>(1);
-  const [sequence, setSequence] = useState<SeqItem[]>([]);
+  const [sequence, setSequenceRaw] = useState<SeqItem[]>(initialSequence ?? []);
+  const [undoStack, setUndoStack] = useState<SeqItem[][]>([]);
+  const [redoStack, setRedoStack] = useState<SeqItem[][]>([]);
   const [activeId, setActiveId] = useState<string>('');
   const [responderId, setResponderId] = useState<string>('');
   const [repsPerHour, setRepsPerHour] = useState<number>(1);
-  const [dcMode, setDcMode] = useState<'strict' | 'burst'>('strict');
+  const [dcMode, setDcMode] = useState<'strict' | 'burst'>(initialDcMode ?? 'strict');
+  const [pxPerSec, setPxPerSec] = useState(150);
+  const [selStart, setSelStart] = useState<number | null>(null);
+  const [selEnd, setSelEnd] = useState<number | null>(null);
+
+  const setSequence = useCallback((updater: SeqItem[] | ((prev: SeqItem[]) => SeqItem[])) => {
+    setSequenceRaw((prev) => {
+      const next = typeof updater === 'function' ? (updater as (p: SeqItem[]) => SeqItem[])(prev) : updater;
+      if (next !== prev) {
+        setUndoStack((u) => [...u, prev].slice(-50));
+        setRedoStack([]);
+      }
+      return next;
+    });
+  }, []);
+
+  const undo = useCallback(() => {
+    setUndoStack((u) => {
+      if (u.length === 0) return u;
+      const prev = u[u.length - 1];
+      setRedoStack((r) => [...r, sequence]);
+      setSequenceRaw(prev);
+      setSelStart(null); setSelEnd(null);
+      return u.slice(0, -1);
+    });
+  }, [sequence]);
+
+  const redo = useCallback(() => {
+    setRedoStack((r) => {
+      if (r.length === 0) return r;
+      const next = r[r.length - 1];
+      setUndoStack((u) => [...u, sequence]);
+      setSequenceRaw(next);
+      setSelStart(null); setSelEnd(null);
+      return r.slice(0, -1);
+    });
+  }, [sequence]);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      } else if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        redo();
+      }
+    };
+    const el = containerRef.current;
+    if (el) el.addEventListener('keydown', handler);
+    return () => { if (el) el.removeEventListener('keydown', handler); };
+  }, [undo, redo]);
+
+  useEffect(() => { onSequenceChange?.(sequence); }, [sequence, onSequenceChange]);
+  useEffect(() => { onDcModeChange?.(dcMode); }, [dcMode, onDcModeChange]);
+
+  const canUndo = undoStack.length > 0;
+  const canRedo = redoStack.length > 0;
+
+  const selLo = selStart !== null && selEnd !== null ? Math.min(selStart, selEnd) : selStart;
+  const selHi = selStart !== null && selEnd !== null ? Math.max(selStart, selEnd) : selStart;
+  const hasSel = selLo !== null && selHi !== null;
+  const isSelected = (i: number) => hasSel && i >= (selLo as number) && i <= (selHi as number);
+
+  const handleBlockClick = (e: { shiftKey: boolean }, i: number) => {
+    if (e.shiftKey && selStart !== null) {
+      setSelEnd(i);
+    } else {
+      setSelStart(i);
+      setSelEnd(i);
+    }
+  };
+
+  const moveSel = (dir: -1 | 1) => {
+    if (!hasSel) return;
+    const lo = selLo as number;
+    const hi = selHi as number;
+    if (dir === -1 && lo === 0) return;
+    if (dir === 1 && hi === sequence.length - 1) return;
+    setSequence((prev) => {
+      const next = [...prev];
+      if (dir === -1) {
+        const tmp = next[lo - 1];
+        next.splice(lo - 1, 1);
+        next.splice(hi, 0, tmp);
+      } else {
+        const tmp = next[hi + 1];
+        next.splice(hi + 1, 1);
+        next.splice(lo, 0, tmp);
+      }
+      return next;
+    });
+    if (dir === -1) { setSelStart((s) => (s !== null ? s - 1 : s)); setSelEnd((s) => (s !== null ? s - 1 : s)); }
+    else { setSelStart((s) => (s !== null ? s + 1 : s)); setSelEnd((s) => (s !== null ? s + 1 : s)); }
+  };
+
+  const blockWidth = (durationMs: number, isWait = false) => {
+    if (isWait) {
+      if (durationMs > 500) {
+        const base = (500 / 1000) * pxPerSec;
+        const extra = Math.log10(durationMs / 500) * pxPerSec * 0.25;
+        return Math.max(base + extra, 40);
+      }
+      const w = (durationMs / 1000) * pxPerSec;
+      return Math.max(w, 40);
+    }
+    const w = (durationMs / 1000) * pxPerSec;
+    return Math.min(Math.max(w, 80), 100);
+  };
+
+  const fitToWidth = () => {
+    if (totalSeqTimeMs === 0) return;
+    const containerWidth = 760;
+    const ideal = containerWidth / (totalSeqTimeSec || 1);
+    setPxPerSec(Math.max(15, Math.min(400, Math.round(ideal * 10) / 10)));
+  };
 
   const colorIndex = (id?: string) => {
     const idx = devices.findIndex((d) => d.id === id);
@@ -84,14 +208,27 @@ export function CyclogramVisualizer({ devices }: CyclogramVisualizerProps) {
     const rInit = deviceResults(active.params);
     const rResp = deviceResults(responder.params);
     const rx1Delay = dcMode === 'strict' ? 1000 : 0;
-    const remainingWait = Math.max(0, rInit.waitTimeMs - rx1Delay - rResp.toaMs);
-    setSequence((prev) => [
-      ...prev,
+    const items: SeqItem[] = [
       { id: rid(), type: 'TX', deviceId: active.id, label: `${active.name} · TX`, durationMs: rInit.toaMs, details: `Запрос · SF${active.params.sf}, ${rInit.totalPayload}B` },
-      ...(rx1Delay > 0 ? [{ id: rid(), type: 'WAIT' as const, label: 'Обработка / RX1', durationMs: rx1Delay, details: '≈1 с' }] : []),
-      { id: rid(), type: 'TX', deviceId: responder.id, label: `${responder.name} · TX`, durationMs: rResp.toaMs, details: `Ответ · SF${responder.params.sf}, ${rResp.totalPayload}B` },
-      ...(dcMode === 'strict' && remainingWait > 0 ? [{ id: rid(), type: 'WAIT' as const, label: 'Остаток DC', durationMs: remainingWait, details: active.name }] : []),
-    ]);
+    ];
+    if (rx1Delay > 0) {
+      items.push({ id: rid(), type: 'WAIT', label: 'Обработка / RX1', durationMs: rx1Delay, details: '≈1 с' });
+    }
+    items.push({ id: rid(), type: 'TX', deviceId: responder.id, label: `${responder.name} · TX`, durationMs: rResp.toaMs, details: `Ответ · SF${responder.params.sf}, ${rResp.totalPayload}B` });
+    if (dcMode === 'strict') {
+      // DC пауза для responder (после его TX он должен молчать)
+      if (rResp.waitTimeMs > 0) {
+        items.push({ id: rid(), type: 'WAIT', label: `Пауза DC (${responder.params.dutyCycle}%)`, durationMs: rResp.waitTimeMs, details: responder.name });
+      }
+      // Остаток DC для initiator: его required silence = waitTimeMs,
+      // из которого 1с обработки + TX responder + DC пауза responder уже покрыли часть
+      const coveredA = rx1Delay + rResp.toaMs + rResp.waitTimeMs;
+      const remainingWaitA = Math.max(0, rInit.waitTimeMs - coveredA);
+      if (remainingWaitA > 0) {
+        items.push({ id: rid(), type: 'WAIT', label: 'Остаток DC', durationMs: remainingWaitA, details: active.name });
+      }
+    }
+    setSequence((prev) => [...prev, ...items]);
   };
 
   const addRx = () => {
@@ -103,8 +240,18 @@ export function CyclogramVisualizer({ devices }: CyclogramVisualizerProps) {
     setSequence((prev) => [...prev, { id: rid(), type: 'WAIT', label, durationMs: ms, details: 'Ожидание' }]);
   };
 
-  const removeSeqItem = (id: string) => setSequence((prev) => prev.filter((i) => i.id !== id));
-  const clearSequence = () => setSequence([]);
+  const removeSeqItem = (id: string) => {
+    setSequence((prev) => prev.filter((i) => i.id !== id));
+    setSelStart(null); setSelEnd(null);
+  };
+  const removeSelected = () => {
+    if (!hasSel) return;
+    const lo = selLo as number;
+    const hi = selHi as number;
+    setSequence((prev) => prev.filter((_, i) => i < lo || i > hi));
+    setSelStart(null); setSelEnd(null);
+  };
+  const clearSequence = () => { setSequence([]); setSelStart(null); setSelEnd(null); };
 
   const totalSeqTimeMs = sequence.reduce((acc, item) => acc + item.durationMs, 0);
   const totalSeqTimeSec = totalSeqTimeMs / 1000;
@@ -117,15 +264,21 @@ export function CyclogramVisualizer({ devices }: CyclogramVisualizerProps) {
     const dev = devices.find((d) => d.id === id);
     const limit = dev?.params.dutyCycle ?? 1;
     const airtime = sequence.filter((i) => i.type === 'TX' && i.deviceId === id).reduce((acc, i) => acc + i.durationMs, 0);
-    // strict: доля эфира в окне сценария; burst: доля эфира в часовом окне
+    // strict: доля эфира в окне сценария (паузы встроены в последовательность)
+    // burst: доля эфира в часовом окне с учётом повторений
     const windowMs = dcMode === 'strict' ? totalSeqTimeMs : 3600_000;
-    const used = windowMs > 0 ? (airtime / windowMs) * 100 : 0;
-    const requiredWindow = limit > 0 ? airtime / (limit / 100) : 0;
+    const effectiveAirtime = dcMode === 'burst' ? airtime * repsPerHour : airtime;
+    const used = windowMs > 0 ? (effectiveAirtime / windowMs) * 100 : 0;
+    const requiredWindow = limit > 0 ? effectiveAirtime / (limit / 100) : 0;
     const compliant = used <= limit + 1e-9;
-    const deficit = Math.max(0, requiredWindow - (dcMode === 'strict' ? totalSeqTimeMs : 0));
+    const deficit = Math.max(0, requiredWindow - (dcMode === 'strict' ? totalSeqTimeMs : 3600_000));
     // burst: сколько таких бёрстов влезет в час до лимита
     const burstsPerHour = dcMode === 'burst' && airtime > 0 ? Math.floor((limit / 100) * 3600_000 / airtime) : 0;
-    return { id, name: dev?.name ?? '—', airtime, limit, used, compliant, deficit, requiredWindow, burstsPerHour, colorIdx: colorIndex(id) };
+    // Лимит эфира в секундах и остаток
+    const limitSec = (limit / 100) * (dcMode === 'strict' ? totalSeqTimeSec : 3600);
+    const usedSec = effectiveAirtime / 1000;
+    const remainingSec = Math.max(0, limitSec - usedSec);
+    return { id, name: dev?.name ?? '—', airtime, limit, used, compliant, deficit, requiredWindow, burstsPerHour, colorIdx: colorIndex(id), limitSec, usedSec, remainingSec };
   });
   const allCompliant = dcRows.every((r) => r.compliant);
 
@@ -139,7 +292,7 @@ export function CyclogramVisualizer({ devices }: CyclogramVisualizerProps) {
   const scenarioCollTone = scenarioPPct < 5 ? 'ok' : scenarioPPct < 10 ? 'warn' : 'bad';
 
   return (
-    <div className="bg-white rounded-2xl p-6 md:p-8 border border-slate-100 shadow-lg">
+    <div ref={containerRef} tabIndex={0} className="bg-white rounded-2xl p-6 md:p-8 border border-slate-100 shadow-lg focus:outline-none">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
         <div className="flex items-center gap-2">
           <Clock className="w-5 h-5 text-blue-600" />
@@ -164,13 +317,12 @@ export function CyclogramVisualizer({ devices }: CyclogramVisualizerProps) {
               <span className="text-xs text-slate-500">Эфирное время одной посылки — {active.name}</span>
             </div>
             <div className="flex items-center gap-2">
-              <select
+              <CustomSelect
                 value={active.id}
-                onChange={(e) => setActiveId(e.target.value)}
-                className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-blue-400"
-              >
-                {devices.map((d) => (<option key={d.id} value={d.id}>{d.name}</option>))}
-              </select>
+                onChange={setActiveId}
+                options={devices.map((d) => ({ value: d.id, label: d.name }))}
+                className="w-36"
+              />
               <span className="text-sm font-mono font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">{activeRes.toaMs.toFixed(1)} ms</span>
             </div>
           </div>
@@ -216,7 +368,7 @@ export function CyclogramVisualizer({ devices }: CyclogramVisualizerProps) {
                 <button
                   onClick={() => setDcMode('burst')}
                   className={cn('px-2.5 h-7 rounded-md text-[11px] font-medium transition-colors', dcMode === 'burst' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700')}
-                  title="Без авто-пауз: TX подряд, задержка только на обработку, DC по часовому окну"
+                  title="Без авто-пауз: TX подряд, DC по часовому окну"
                 >Быстрый</button>
               </div>
               <button onClick={addTxWithDC} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-medium transition-colors">
@@ -250,13 +402,9 @@ export function CyclogramVisualizer({ devices }: CyclogramVisualizerProps) {
             {devices.length >= 2 && (
               <div className="flex flex-wrap items-center gap-2 bg-indigo-50/50 border border-indigo-100 rounded-lg p-2.5">
                 <span className="text-[11px] font-medium text-indigo-700">Диалог:</span>
-                <select value={active.id} onChange={(e) => setActiveId(e.target.value)} className="text-xs border border-indigo-200 rounded-lg px-2 py-1.5 bg-white text-slate-700 focus:outline-none">
-                  {devices.map((d) => (<option key={d.id} value={d.id}>{d.name}</option>))}
-                </select>
+                <CustomSelect value={active.id} onChange={setActiveId} options={devices.map((d) => ({ value: d.id, label: d.name }))} className="w-36" />
                 <ArrowRight className="w-4 h-4 text-indigo-400" />
-                <select value={responder.id} onChange={(e) => setResponderId(e.target.value)} className="text-xs border border-indigo-200 rounded-lg px-2 py-1.5 bg-white text-slate-700 focus:outline-none">
-                  {devices.map((d) => (<option key={d.id} value={d.id}>{d.name}</option>))}
-                </select>
+                <CustomSelect value={responder.id} onChange={setResponderId} options={devices.map((d) => ({ value: d.id, label: d.name }))} className="w-36" />
                 <button onClick={addDialog} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg text-xs font-medium transition-colors">
                   <ArrowRight className="w-3.5 h-3.5" /> Запрос → Ответ
                 </button>
@@ -264,7 +412,85 @@ export function CyclogramVisualizer({ devices }: CyclogramVisualizerProps) {
             )}
           </div>
 
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 overflow-x-auto">
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+            {sequence.length > 0 && (
+              <div className="flex items-center justify-between mb-3 sticky top-0 bg-slate-50 py-1 z-10">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setPxPerSec((p) => Math.max(15, Math.round(p / 1.5 * 10) / 10))}
+                    className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
+                    title="Уменьшить масштаб"
+                  >
+                    <ZoomOut className="w-4 h-4" />
+                  </button>
+                  <span className="text-xs font-mono text-slate-500 min-w-[60px] text-center">{pxPerSec} px/с</span>
+                  <button
+                    onClick={() => setPxPerSec((p) => Math.min(400, Math.round(p * 1.5 * 10) / 10))}
+                    className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
+                    title="Увеличить масштаб"
+                  >
+                    <ZoomIn className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={fitToWidth}
+                    className="flex items-center gap-1 px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors text-xs font-medium"
+                    title="Уместить в экран"
+                  >
+                    <Maximize2 className="w-3.5 h-3.5" /> Fit
+                  </button>
+                  <div className="flex items-center gap-0.5 ml-1 bg-white border border-slate-200 rounded-lg p-0.5">
+                    <button
+                      onClick={undo}
+                      disabled={!canUndo}
+                      className="p-1 text-slate-600 hover:bg-slate-100 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      title="Отменить (Ctrl+Z)"
+                    >
+                      <Undo2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={redo}
+                      disabled={!canRedo}
+                      className="p-1 text-slate-600 hover:bg-slate-100 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      title="Повторить (Ctrl+Y)"
+                    >
+                      <Redo2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {hasSel && (
+                    <div className="flex items-center gap-0.5 ml-1 bg-blue-50 border border-blue-200 rounded-lg p-0.5">
+                      <button
+                        onClick={() => moveSel(-1)}
+                        disabled={(selLo as number) === 0}
+                        className="p-1 text-blue-700 hover:bg-blue-100 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        title="Сдвинуть влево"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <span className="text-[10px] font-mono text-blue-600 px-1 select-none">
+                        {selLo !== selHi ? `${(selLo as number) + 1}–${(selHi as number) + 1}` : `${(selLo as number) + 1}`}
+                      </span>
+                      <button
+                        onClick={() => moveSel(1)}
+                        disabled={(selHi as number) === sequence.length - 1}
+                        className="p-1 text-blue-700 hover:bg-blue-100 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        title="Сдвинуть вправо"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={removeSelected}
+                        className="p-1 text-rose-600 hover:bg-rose-100 rounded transition-colors"
+                        title="Удалить выделенное"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <span className="text-xs font-mono font-bold text-slate-700 bg-white border border-slate-200 rounded-lg px-2.5 py-1">{totalSeqTimeSec < 1 ? `${totalSeqTimeMs.toFixed(0)} ms` : totalSeqTimeSec < 60 ? `${totalSeqTimeSec.toFixed(2)} с` : `${Math.floor(totalSeqTimeSec / 60)}м ${Math.round(totalSeqTimeSec % 60)}с`}</span>
+              </div>
+            )}
+            <div className="overflow-x-auto">
             {sequence.length === 0 ? (
               <div className="flex flex-col items-center justify-center text-slate-400 min-h-[140px]">
                 <Activity className="w-8 h-8 mb-2 opacity-50" />
@@ -273,15 +499,31 @@ export function CyclogramVisualizer({ devices }: CyclogramVisualizerProps) {
             ) : (
               <div className="min-w-max flex flex-col justify-center min-h-[140px]">
                 <div className="flex items-stretch h-20 mb-6">
-                  {sequence.map((item) => {
+                  {sequence.map((item, idx) => {
+                    const isWait = item.type === 'WAIT';
+                    const w = blockWidth(item.durationMs, isWait);
+                    const showFull = w >= 100;
+                    const showCompact = w >= 80 && !showFull;
+                    const sel = isSelected(idx);
                     if (item.type === 'TX') {
                       const c = DEVICE_COLORS[colorIndex(item.deviceId)];
                       return (
-                        <div key={item.id} className={`group relative flex flex-col justify-center items-center ${c.bg} text-white min-w-[90px] px-3 rounded-md shadow-sm border ${c.border} z-10 mx-0.5`}>
-                          <span className="text-[11px] font-bold tracking-wide truncate max-w-[110px]">{item.label}</span>
-                          <span className="text-[10px] font-mono mt-0.5">{item.durationMs.toFixed(0)} ms</span>
-                          <span className="text-[9px] opacity-80 mt-1 truncate max-w-[110px]">{item.details}</span>
-                          <button onClick={() => removeSeqItem(item.id)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-20">
+                        <div key={item.id} onClick={(e) => handleBlockClick(e, idx)} className={cn(`group relative flex flex-col justify-center items-center ${c.bg} text-white px-1 rounded-md shadow-sm border ${c.border} z-10 mx-0.5 cursor-pointer transition-all`, sel && 'ring-2 ring-blue-400 ring-offset-1')} style={{ width: w, minWidth: w }}>
+                          {showFull ? (
+                            <>
+                              <span className="text-[11px] font-bold tracking-wide text-center px-1 leading-tight">{item.label}</span>
+                              <span className="text-[10px] font-mono mt-0.5">{item.durationMs.toFixed(0)} ms</span>
+                              <span className="text-[9px] opacity-80 mt-0.5 text-center px-1 leading-tight">{item.details}</span>
+                            </>
+                          ) : showCompact ? (
+                            <>
+                              <span className="text-[10px] font-bold text-center px-0.5 leading-tight truncate max-w-full">TX</span>
+                              <span className="text-[9px] font-mono mt-0.5">{item.durationMs.toFixed(0)}ms</span>
+                            </>
+                          ) : (
+                            <span className="text-[9px] font-bold rotate-90 whitespace-nowrap">TX</span>
+                          )}
+                          <button onClick={(e) => { e.stopPropagation(); removeSeqItem(item.id); }} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-20">
                             <X className="w-3 h-3" />
                           </button>
                         </div>
@@ -289,25 +531,46 @@ export function CyclogramVisualizer({ devices }: CyclogramVisualizerProps) {
                     }
                     if (item.type === 'RX') {
                       return (
-                        <div key={item.id} className="group relative flex flex-col justify-center items-center bg-emerald-500 text-white min-w-[90px] px-3 rounded-md shadow-sm border border-emerald-600 z-10 mx-0.5">
-                          <span className="text-[11px] font-bold tracking-wide truncate max-w-[110px]">{item.label}</span>
-                          <span className="text-[10px] font-mono mt-0.5">{item.durationMs.toFixed(0)} ms</span>
-                          <span className="text-[9px] opacity-80 mt-1 truncate max-w-[110px]">{item.details}</span>
-                          <button onClick={() => removeSeqItem(item.id)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-20">
+                        <div key={item.id} onClick={(e) => handleBlockClick(e, idx)} className={cn('group relative flex flex-col justify-center items-center bg-emerald-500 text-white px-1 rounded-md shadow-sm border border-emerald-600 z-10 mx-0.5 cursor-pointer transition-all', sel && 'ring-2 ring-blue-400 ring-offset-1')} style={{ width: w, minWidth: w }}>
+                          {showFull ? (
+                            <>
+                              <span className="text-[11px] font-bold tracking-wide text-center px-1 leading-tight">{item.label}</span>
+                              <span className="text-[10px] font-mono mt-0.5">{item.durationMs.toFixed(0)} ms</span>
+                              <span className="text-[9px] opacity-80 mt-0.5 text-center px-1 leading-tight">{item.details}</span>
+                            </>
+                          ) : showCompact ? (
+                            <>
+                              <span className="text-[10px] font-bold text-center px-0.5 leading-tight truncate max-w-full">RX</span>
+                              <span className="text-[9px] font-mono mt-0.5">{item.durationMs.toFixed(0)}ms</span>
+                            </>
+                          ) : (
+                            <span className="text-[9px] font-bold rotate-90 whitespace-nowrap">RX</span>
+                          )}
+                          <button onClick={(e) => { e.stopPropagation(); removeSeqItem(item.id); }} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-20">
                             <X className="w-3 h-3" />
                           </button>
                         </div>
                       );
                     }
                     return (
-                      <div key={item.id} className="group relative flex flex-col justify-center items-center pattern-diagonal-lines text-slate-700 min-w-[120px] bg-slate-100 border border-slate-300 rounded-md mx-0.5" style={{ flexGrow: 1, minWidth: item.durationMs > 2000 ? '160px' : '100px' }}>
-                        <div className="bg-white/95 backdrop-blur-sm px-3 py-1.5 border border-slate-200 rounded-lg shadow-sm flex flex-col items-center">
-                          <span className="text-[10px] font-bold">{item.label}</span>
-                          <span className="text-[10px] font-mono text-slate-500">
-                            {item.durationMs >= 1000 ? `${(item.durationMs / 1000).toFixed(2)} s` : `${item.durationMs.toFixed(0)} ms`}
-                          </span>
-                        </div>
-                        <button onClick={() => removeSeqItem(item.id)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-20">
+                      <div key={item.id} onClick={(e) => handleBlockClick(e, idx)} className={cn('group relative flex flex-col justify-center items-center pattern-diagonal-lines text-slate-700 bg-slate-100 border border-slate-300 rounded-md mx-0.5 cursor-pointer transition-all', sel && 'ring-2 ring-blue-400 ring-offset-1')} style={{ width: w, minWidth: w }}>
+                        {showFull ? (
+                          <div className="bg-white/95 backdrop-blur-sm px-2 py-1 border border-slate-200 rounded-lg shadow-sm flex flex-col items-center">
+                            <span className="text-[10px] font-bold truncate max-w-full">{item.label}</span>
+                            <span className="text-[10px] font-mono text-slate-500">
+                              {item.durationMs >= 1000 ? `${(item.durationMs / 1000).toFixed(2)} s` : `${item.durationMs.toFixed(0)} ms`}
+                            </span>
+                          </div>
+                        ) : showCompact ? (
+                          <div className="bg-white/95 backdrop-blur-sm px-1 py-0.5 border border-slate-200 rounded shadow-sm flex flex-col items-center">
+                            <span className="text-[9px] font-mono text-slate-500">
+                              {item.durationMs >= 1000 ? `${(item.durationMs / 1000).toFixed(1)}s` : `${item.durationMs.toFixed(0)}ms`}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-[9px] font-bold rotate-90 whitespace-nowrap text-slate-500">{item.durationMs >= 1000 ? `${(item.durationMs / 1000).toFixed(0)}с` : 'W'}</span>
+                        )}
+                        <button onClick={(e) => { e.stopPropagation(); removeSeqItem(item.id); }} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-20">
                           <X className="w-3 h-3" />
                         </button>
                       </div>
@@ -319,13 +582,14 @@ export function CyclogramVisualizer({ devices }: CyclogramVisualizerProps) {
                   <span>0s</span>
                   <div className="flex-1 border-t border-dashed border-slate-300 mt-1.5 mx-2 relative">
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-slate-50 px-2 text-slate-600 font-sans font-medium text-xs rounded border border-slate-200 shadow-sm whitespace-nowrap">
-                      Общее время: {totalSeqTimeSec < 1 ? `${totalSeqTimeMs.toFixed(0)} ms` : `${totalSeqTimeSec.toFixed(2)} s`}
+                      Общее время: {totalSeqTimeSec < 1 ? `${totalSeqTimeMs.toFixed(0)} ms` : totalSeqTimeSec < 60 ? `${totalSeqTimeSec.toFixed(2)} s` : `${Math.floor(totalSeqTimeSec / 60)}м ${Math.round(totalSeqTimeSec % 60)}с`}
                     </div>
                   </div>
-                  <span>{totalSeqTimeSec < 1 ? `${totalSeqTimeMs.toFixed(0)} ms` : `${totalSeqTimeSec.toFixed(2)} s`}</span>
+                  <span>{totalSeqTimeSec < 1 ? `${totalSeqTimeMs.toFixed(0)} ms` : totalSeqTimeSec < 60 ? `${totalSeqTimeSec.toFixed(2)} s` : `${Math.floor(totalSeqTimeSec / 60)}м ${Math.round(totalSeqTimeSec % 60)}с`}</span>
                 </div>
               </div>
             )}
+            </div>
           </div>
 
           {dcRows.length > 0 && (
@@ -337,6 +601,11 @@ export function CyclogramVisualizer({ devices }: CyclogramVisualizerProps) {
                 </span>
                 <span className="text-xs text-slate-500 font-mono">· окно {dcMode === 'strict' ? `${(totalSeqTimeMs / 1000).toFixed(2)} с` : '1 час'}</span>
               </div>
+              {dcMode === 'burst' && !allCompliant && (
+                <div className="mb-3 text-xs text-rose-700 bg-rose-100/60 rounded-lg px-3 py-2">
+                  В «быстром» режиме весь эфирный лимит тратится за бёрст. После превышения нужно ждать до конца часового окна, прежде чем передавать снова.
+                </div>
+              )}
               <div className="space-y-2">
                 {dcRows.map((r) => (
                   <div key={r.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
@@ -344,13 +613,20 @@ export function CyclogramVisualizer({ devices }: CyclogramVisualizerProps) {
                       <span className={`w-2.5 h-2.5 rounded-sm ${DEVICE_COLORS[r.colorIdx].bg}`} />
                       <span className="font-medium text-slate-700 truncate">{r.name}</span>
                     </span>
-                    <span className="font-mono text-slate-600">эфир {r.airtime.toFixed(0)} ms</span>
+                    <span className="font-mono text-slate-600">
+                      эфир {r.usedSec.toFixed(2)} с{dcMode === 'burst' && repsPerHour !== 1 ? ` (${r.airtime.toFixed(0)} мс × ${repsPerHour})` : ''}
+                    </span>
+                    <span className="font-mono text-slate-500">лимит {r.limitSec.toFixed(1)} с</span>
                     <span className="font-mono">занято <strong className={r.compliant ? 'text-emerald-700' : 'text-rose-700'}>{r.used.toFixed(2)}%</strong> / {r.limit}%</span>
-                    {dcMode === 'burst' ? (
-                      <span className={r.compliant ? 'text-emerald-700' : 'text-rose-700'}>≈ {r.burstsPerHour} таких бёрстов/час до лимита</span>
-                    ) : (!r.compliant && (
-                      <span className="text-rose-700">добавьте ~{(r.deficit / 1000).toFixed(1)} с тишины (мин. окно {(r.requiredWindow / 1000).toFixed(1)} с)</span>
-                    ))}
+                    <span className={`font-mono ${r.compliant ? 'text-emerald-700' : 'text-rose-700'}`}>
+                      {r.compliant ? `осталось ${r.remainingSec.toFixed(1)} с` : `перебор на ${(r.usedSec - r.limitSec).toFixed(1)} с`}
+                    </span>
+                    {dcMode === 'burst' && (
+                      <span className={r.compliant ? 'text-emerald-700' : 'text-rose-700'}>макс. {r.burstsPerHour}/час{repsPerHour > r.burstsPerHour ? ` — превышение на ${repsPerHour - r.burstsPerHour}` : ''}</span>
+                    )}
+                    {dcMode === 'strict' && !r.compliant && (
+                      <span className="text-rose-700">добавьте ~{(r.deficit / 1000).toFixed(1)} с тишины</span>
+                    )}
                   </div>
                 ))}
               </div>
@@ -414,7 +690,7 @@ export function CyclogramVisualizer({ devices }: CyclogramVisualizerProps) {
           )}
 
           <p className="text-xs text-slate-500 mt-3 max-w-3xl">
-            Каждый <strong>TX</strong> — излучение конкретного устройства (учитывается в его Duty Cycle). Паузы и окна <strong>RX</strong> эфир не занимают. <strong>«Стандарт»</strong>: после каждого TX вставляется пауза DC, окно обработки 1 с (как LoRaWAN). <strong>«Быстрый»</strong>: TX подряд без пауз — при необходимости добавьте «Свободную паузу» вручную. DC проверяется по часовому окну.
+            Каждый <strong>TX</strong> — излучение конкретного устройства (учитывается в его Duty Cycle). Паузы и окна <strong>RX</strong> эфир не занимают. <strong>«Стандарт»</strong>: после каждого TX вставляется пауза DC для передатчика, окно обработки 1 с (как LoRaWAN). <strong>«Быстрый»</strong>: TX подряд без пауз — DC считается по часовому окну с учётом количества повторов/час. <strong>Клик</strong> по блоку — выделить, <strong>Shift+клик</strong> — выделить диапазон, кнопки ← → — переместить.
           </p>
         </div>
       </div>

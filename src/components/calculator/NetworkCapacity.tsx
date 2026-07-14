@@ -3,6 +3,7 @@ import { Network, ChevronDown } from "lucide-react";
 import { LoRaParams, LoRaResults, DeviceProfile } from "@/types";
 import { calculateToA } from "@/utils/lora";
 import { cn } from "@/lib/utils";
+import { CustomSelect } from "@/components/ui/CustomSelect";
 
 interface NetworkCapacityProps {
   params: LoRaParams;
@@ -125,14 +126,15 @@ export function NetworkCapacity({ params, results, devices }: NetworkCapacityPro
             {devices.length > 0 && (
               <div>
                 <label className="text-slate-700 font-medium text-sm block mb-2">Базовый профиль устройства</label>
-                <select
+                <CustomSelect
                   value={selectedDeviceId}
-                  onChange={(e) => setSelectedDeviceId(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:outline-none transition-colors bg-white text-slate-900 text-sm"
-                >
-                  <option value="">Из редактора (текущие параметры)</option>
-                  {devices.map((d) => (<option key={d.id} value={d.id}>{d.name} — SF{d.params.sf}, {d.params.bw}kHz, DC{d.params.dutyCycle}%</option>))}
-                </select>
+                  onChange={setSelectedDeviceId}
+                  options={[
+                    { value: "", label: "Из редактора (текущие параметры)" },
+                    ...devices.map((d) => ({ value: d.id, label: `${d.name} — SF${d.params.sf}, ${d.params.bw}kHz, DC${d.params.dutyCycle}%` })),
+                  ]}
+                  className="w-full"
+                />
                 <p className="text-xs text-slate-500 mt-1.5">ToA и Duty Cycle берутся из профиля. Все N узлов используют параметры выбранного устройства.</p>
               </div>
             )}
