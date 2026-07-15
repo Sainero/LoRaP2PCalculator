@@ -41,7 +41,10 @@ export function NumberInput({ value, onChange, min, max, step = 1, className, hi
   };
 
   return (
-    <div className={cn('relative flex items-stretch overflow-hidden rounded-xl', hideSpinner && 'contents')}>
+    <div className={cn(
+      'relative flex items-stretch overflow-hidden rounded-xl border-2 border-slate-200 focus-within:border-blue-500 transition-colors bg-white',
+      hideSpinner && 'contents'
+    )}>
       <input
         ref={inputRef}
         type="number"
@@ -56,7 +59,7 @@ export function NumberInput({ value, onChange, min, max, step = 1, className, hi
         }}
         onKeyDown={handleKeyDown}
         className={cn(
-          'w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:outline-none transition-colors bg-white text-slate-900 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
+          'w-full px-4 py-3 bg-transparent text-slate-900 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
           !hideSpinner && 'pr-10',
           className
         )}

@@ -20,7 +20,6 @@ export function DcCapacityPanel({ devices }: DcCapacityPanelProps) {
   const [showFormulas, setShowFormulas] = useState(false);
   const [selectedId, setSelectedId] = useState('');
   const [messagesPerDay, setMessagesPerDay] = useState(24);
-  const [confirmedMode, setConfirmedMode] = useState(true);
 
   const dev = devices.find((d) => d.id === selectedId) ?? devices[0];
 
@@ -79,7 +78,7 @@ export function DcCapacityPanel({ devices }: DcCapacityPanelProps) {
                 className="w-full"
               />
             </div>
-            <div>
+            <div className="flex flex-col">
               <label className="text-xs text-slate-500 font-medium block mb-1.5">Сообщений/сутки</label>
               <NumberInput
                 value={messagesPerDay}
@@ -89,23 +88,6 @@ export function DcCapacityPanel({ devices }: DcCapacityPanelProps) {
                 step={1}
                 className="font-mono text-sm w-28"
               />
-            </div>
-            <div>
-              <label className="text-xs text-slate-500 font-medium block mb-1.5">Режим</label>
-              <div className="flex gap-1.5">
-                <button
-                  onClick={() => setConfirmedMode(true)}
-                  className={cn("px-3 py-2 rounded-lg border-2 text-xs font-medium transition-all", confirmedMode ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-200 bg-white text-slate-600")}
-                >
-                  TX + ACK
-                </button>
-                <button
-                  onClick={() => setConfirmedMode(false)}
-                  className={cn("px-3 py-2 rounded-lg border-2 text-xs font-medium transition-all", !confirmedMode ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-200 bg-white text-slate-600")}
-                >
-                  Только TX
-                </button>
-              </div>
             </div>
           </div>
 

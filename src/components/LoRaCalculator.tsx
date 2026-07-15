@@ -1,5 +1,5 @@
 import { useLoRaState } from '@/hooks/useLoRaState';
-import { RadioTower, Network, Calculator, BookOpen, Globe, Menu, X, ChevronDown, Info, Download, Upload, Sun, Moon } from 'lucide-react';
+import { RadioTower, Network, Calculator, BookOpen, Globe, Menu, X, ChevronDown, Info, Download, Upload, Sun, Moon, BarChart3 } from 'lucide-react';
 import { Controls } from './calculator/Controls';
 import { PacketStructure } from './calculator/PacketStructure';
 import { ResultSidebar } from './calculator/ResultSidebar';
@@ -13,13 +13,14 @@ import { DcCapacityPanel } from './calculator/DcCapacityPanel';
 import { useDeviceProfiles } from '@/hooks/useDeviceProfiles';
 import { Glossary } from './calculator/Glossary';
 import { RegionalParameters } from './calculator/RegionalParameters';
+import { ChartsPage } from './calculator/ChartsPage';
 import { useState, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { SeqItem } from './calculator/CyclogramVisualizer';
 import { DeviceProfile, LoRaParams } from '@/types';
 import { useTheme } from '@/hooks/useTheme';
 
-type Tab = 'packet' | 'network' | 'glossary' | 'regional';
+type Tab = 'packet' | 'network' | 'charts' | 'glossary' | 'regional';
 
 function NetworkGuide() {
   const [open, setOpen] = useState(false);
@@ -179,6 +180,16 @@ export default function LoRaCalculator() {
       >
         <Network className="w-5 h-5" />
         Ёмкость сети
+      </button>
+      <button
+        onClick={() => { setActiveTab('charts'); setIsMobileMenuOpen(false); }}
+        className={cn(
+          "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-left", 
+          activeTab === 'charts' ? "bg-blue-600 text-white shadow-md shadow-blue-600/20" : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+        )}
+      >
+        <BarChart3 className="w-5 h-5" />
+        Графики
       </button>
       <button
         onClick={() => { setActiveTab('glossary'); setIsMobileMenuOpen(false); }}
@@ -358,6 +369,10 @@ export default function LoRaCalculator() {
 
               <NetworkCapacity params={params} results={results} devices={devices} />
             </div>
+          )}
+
+          {activeTab === 'charts' && (
+            <ChartsPage params={params} devices={devices} theme={theme} />
           )}
 
           {activeTab === 'glossary' && (
