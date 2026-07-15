@@ -34,7 +34,7 @@ const ENVIRONMENTS: EnvEntry[] = [
   { id: 'rural', label: 'Сельская', gamma: 2.5, Menv: 24, Renv: 1, color: '#10b981' },
   { id: 'suburban', label: 'Пригород', gamma: 3.0, Menv: 41, Renv: 2, color: '#f59e0b' },
   { id: 'urban', label: 'Город', gamma: 3.5, Menv: 58, Renv: 3, color: '#ef4444' },
-  { id: 'indoor', label: 'Indoor', gamma: 4.5, Menv: 89, Renv: 4, color: '#a855f7' },
+  { id: 'z_indoor', label: 'Indoor', gamma: 4.5, Menv: 89, Renv: 4, color: '#a855f7' },
 ];
 
 function totalPayload(p: LoRaParams): number {
