@@ -386,8 +386,9 @@ export function CyclogramVisualizer({ devices, initialSequence, initialDcMode, o
                   onChange={(v) => setCustomWaitSec(v)}
                   min={0.1}
                   step={0.1}
+                  borderless
                   title="Задержка в секундах"
-                  className="w-24 h-full px-2 text-xs border-2 border-transparent bg-transparent focus:border-transparent focus:ring-0 focus:outline-none"
+                  className="w-24 h-full px-2 text-xs bg-transparent focus:outline-none"
                 />
                 <span className="text-xs text-slate-500 pr-1 select-none">с</span>
                 <button onClick={() => addWait(customWaitSec * 1000, 'Свободная пауза')} className="flex items-center gap-1.5 px-3 h-full bg-slate-100 text-slate-700 hover:bg-slate-200 border-l border-slate-200 text-xs font-medium transition-colors">

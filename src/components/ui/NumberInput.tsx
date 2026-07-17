@@ -10,10 +10,11 @@ interface NumberInputProps {
   step?: number;
   className?: string;
   hideSpinner?: boolean;
+  borderless?: boolean;
   title?: string;
 }
 
-export function NumberInput({ value, onChange, min, max, step = 1, className, hideSpinner = false, title }: NumberInputProps) {
+export function NumberInput({ value, onChange, min, max, step = 1, className, hideSpinner = false, borderless = false, title }: NumberInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const clamp = (v: number) => {
@@ -42,7 +43,8 @@ export function NumberInput({ value, onChange, min, max, step = 1, className, hi
 
   return (
     <div className={cn(
-      'relative flex items-stretch overflow-hidden rounded-xl border-2 border-slate-200 focus-within:border-blue-500 transition-colors bg-white',
+      'relative flex items-stretch overflow-hidden rounded-xl transition-colors',
+      borderless ? 'bg-transparent' : 'border-2 border-slate-200 focus-within:border-blue-500 bg-white',
       hideSpinner && 'contents'
     )}>
       <input
